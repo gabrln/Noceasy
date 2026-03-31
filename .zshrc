@@ -1,135 +1,59 @@
-
-# ─────────────────────────────────────────────────────────
-
-# .zshrc - GSOUZA (Clean Arch Setup - No Oh My Zsh)
-
-# ─────────────────────────────────────────────────────────
-
-# ─────────────────────────────────────────
-
-# POWERLEVEL10K INSTANT PROMPT (rápido)
-
-# ─────────────────────────────────────────
-
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# ─────────────────────────────────────────
-
-# VARIÁVEIS DE AMBIENTE
-
-# ─────────────────────────────────────────
-
+### ENV
 export EDITOR="nvim"
 export TERMINAL="kitty"
 export QT_QPA_PLATFORMTHEME=qt6ct
 export PATH="$HOME/.local/bin:$PATH"
 
-# Histórico otimizado
-
+### HISTORY
 HISTSIZE=5000
 SAVEHIST=5000
-setopt HIST_IGNORE_ALL_DUPS
-setopt SHARE_HISTORY
-setopt INC_APPEND_HISTORY
+setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY INC_APPEND_HISTORY
+HISTFILE=~/.zsh_history
 
-# ─────────────────────────────────────────
+### OPTIONS
+setopt AUTO_CD MULTIOS PROMPT_SUBST
+unsetopt CORRECT CORRECT_ALL
 
-# ALIASES ESSENCIAIS
+### COMPLETION
+autoload -Uz compinit && compinit
 
-# ─────────────────────────────────────────
-
+### ALIASES
 alias c="clear"
 alias q="exit"
 alias please="sudo"
-
-# Pacman (Arch/CachyOS)
-
 alias update="sudo pacman -Syu"
 alias install="sudo pacman -S"
 alias remove="sudo pacman -Rsn"
-alias cleanup="sudo pacman -Rsn $(pacman -Qtdq 2>/dev/null)"
+alias cleanup="sudo pacman -Rsn \$(pacman -Qtdq 2>/dev/null)"
 alias fixpacman="sudo rm /var/lib/pacman/db.lck"
-
-# Build otimizado
-
-alias make="make -j$(nproc)"
-alias ninja="ninja -j$(nproc)"
-
-# Navegação rápida
-
+alias make="make -j\$(nproc)"
+alias ninja="ninja -j\$(nproc)"
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
-
-# Listagem melhor
-
 alias ls="ls --color=auto"
 alias ll="ls -lah"
 alias la="ls -A"
 
-# ─────────────────────────────────────────
-
-# COMPLETION (mais rápido)
-
-# ─────────────────────────────────────────
-
-autoload -Uz compinit
-compinit
-
-# ─────────────────────────────────────────
-
-# FZF (se instalado)
-
-# ─────────────────────────────────────────
-
-[ -f /usr/share/fzf/key-bindings.zsh ] && source /usr/share/fzf/key-bindings.zsh
-[ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh
-
-# ─────────────────────────────────────────
-
-# PLUGINS (via pacman)
-
-# ─────────────────────────────────────────
-
+### PLUGINS
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-
-# command-not-found (opcional)
-
+source /usr/share/zsh/plugins/zsh-sudo/sudo.plugin.zsh
+[ -f /usr/share/fzf/key-bindings.zsh ] && source /usr/share/fzf/key-bindings.zsh
+[ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh
 [ -f /usr/share/doc/pkgfile/command-not-found.zsh ] && source /usr/share/doc/pkgfile/command-not-found.zsh
 
-# ─────────────────────────────────────────
-
-# POWERLEVEL10K
-
-# ─────────────────────────────────────────
-
+### P10K
 source ~/powerlevel10k/powerlevel10k.zsh-theme
-
-# Config do tema
-
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# ─────────────────────────────────────────
-
-# OPÇÕES DO ZSH
-
-# ─────────────────────────────────────────
-
-unsetopt CORRECT
-unsetopt CORRECT_ALL
-
-setopt AUTO_CD
-setopt MULTIOS
-setopt PROMPT_SUBST
-
-# ─────────────────────────────────────────
-
-# FINAL
-
-# ─────────────────────────────────────────
-
-echo "" > /dev/null
+#KEY-BINDINGS
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+bindkey '^R' history-incremental-search-backward
