@@ -1,0 +1,61 @@
+[opener]
+edit = [
+  { run = 'kitty -e nvim "$@"', desc = "nvim", block = true },
+]
+open_text = [
+  { run = 'kitty -e nvim "$@"', desc = "nvim", block = true },
+]
+open_image = [
+  { run = 'swayimg "$@"', desc = "swayimg" },
+]
+open_video = [
+  { run = 'mpv "$@"', desc = "mpv" },
+]
+open_audio = [
+  { run = 'mpv "$@"', desc = "mpv" },
+]
+open_pdf = [
+  { run = 'zathura "$@"', desc = "zathura" },
+]
+open_archive = [
+  { run = 'file-roller "$@"', desc = "file-roller" },
+]
+open_default = [
+  { run = 'xdg-open "$@"', desc = "system default" },
+]
+
+[open]
+rules = [
+  # text / code
+  { mime = "text/*",                     use = "open_text"    },
+  { mime = "application/json",           use = "open_text"    },
+  { mime = "application/xml",            use = "open_text"    },
+  { mime = "application/javascript",     use = "open_text"    },
+  { mime = "application/x-sh",          use = "open_text"    },
+  { mime = "inode/x-empty",             use = "open_text"    },
+
+  # images
+  { mime = "image/*",                    use = "open_image"   },
+
+  # video
+  { mime = "video/*",                    use = "open_video"   },
+
+  # audio
+  { mime = "audio/*",                    use = "open_audio"   },
+
+  # pdf
+  { mime = "application/pdf",            use = "open_pdf"     },
+
+  # archives
+  { mime = "application/zip",            use = "open_archive" },
+  { mime = "application/x-tar",         use = "open_archive" },
+  { mime = "application/x-bzip2",       use = "open_archive" },
+  { mime = "application/x-xz",          use = "open_archive" },
+  { mime = "application/x-7z-compressed", use = "open_archive" },
+  { mime = "application/gzip",          use = "open_archive" },
+  { mime = "application/zstd",          use = "open_archive" },
+  { mime = "application/x-rar",         use = "open_archive" },
+
+  # fallback
+  { mime = "*",                          use = "open_default" },
+]
