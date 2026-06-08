@@ -1,11 +1,16 @@
--- ============================================================
--- HYPRLAND 0.55.0
--- ============================================================
+-- =============================================================================
+-- HYPRLAND LUA CONFIGURATION (v0.55.0+)
+-- =============================================================================
 
+-- -----------------------------------------------------------------------------
+-- 1. Imports & Modules
+-- -----------------------------------------------------------------------------
 require("noctalia")
 
--- - - - Environment Variables - - -
-hl.env = {
+-- -----------------------------------------------------------------------------
+-- 2. Environment Variables
+-- -----------------------------------------------------------------------------
+local env_variables = {
 	LIBVA_DRIVER_NAME = "iHD",
 	GBM_BACKEND = "drimod",
 	__GLX_VENDOR_LIBRARY_NAME = "mesa",
@@ -22,21 +27,16 @@ hl.env = {
 	XCURSOR_SIZE = "24",
 	HYPRCURSOR_THEME = "Bibata-Modern-Classic",
 	HYPRCURSOR_SIZE = "24",
+	QS_ICON_THEME = "Papirus-Dark",
 }
 
--- - - - Animations - - -
-hl.curve("fade", { type = "bezier", points = { { 0.25, 0.1 }, { 0.25, 1.0 } } })
+for key, value in pairs(env_variables) do
+	hl.env(key, value)
+end
 
-hl.animation({ leaf = "global", enabled = false })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 2, bezier = "fade" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 2, bezier = "fade" })
-hl.animation({ leaf = "fadeSwitch", enabled = true, speed = 2, bezier = "fade" })
-hl.animation({ leaf = "fadeDim", enabled = true, speed = 2, bezier = "fade" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "fade" })
-hl.animation({ leaf = "specialWorkspaceIn", enabled = true, speed = 2, bezier = "fade", style = "slidefadevert" })
-hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 2, bezier = "fade", style = "slidefadevert" })
-
--- - - - General & Decoration - - -
+-- -----------------------------------------------------------------------------
+-- 3. Core Configurations (Look & Feel, Input, Rules)
+-- -----------------------------------------------------------------------------
 hl.config({
 	general = {
 		gaps_in = 5,
@@ -79,14 +79,18 @@ hl.config({
 	cursor = { no_warps = true },
 })
 
--- - - - Monitor & Workspaces - - -
+-- -----------------------------------------------------------------------------
+-- 4. Monitors & Workspaces
+-- -----------------------------------------------------------------------------
 hl.monitor({ output = "eDP-1", mode = "1920x1080@60", position = "0x0", scale = "1.0" })
 
 for i = 1, 10 do
 	hl.workspace_rule({ workspace = tostring(i), monitor = "eDP-1", persistent = true })
 end
 
--- - - - Layer Rules (Noctalia) - - -
+-- -----------------------------------------------------------------------------
+-- 5. Window & Layer Rules
+-- -----------------------------------------------------------------------------
 hl.layer_rule({
 	name = "noctalia",
 	match = { namespace = "^noctalia-(bar-.+|notification|dock|panel)$" },
@@ -95,7 +99,37 @@ hl.layer_rule({
 	blur_popups = true,
 })
 
--- - - - Scratchpad Factory - - -
+hl.window_rule({
+	match = { class = "yad-keyhints" },
+	float = true,
+	size = { 1000, 650 },
+	center = true,
+	pin = true,
+})
+
+hl.window_rule({
+	match = { initial_class = "obsidian" },
+	tile = true,
+	float = false,
+})
+
+-- -----------------------------------------------------------------------------
+-- 6. Animations & Easing Curves
+-- -----------------------------------------------------------------------------
+hl.curve("fade", { type = "bezier", points = { { 0.25, 0.1 }, { 0.25, 1.0 } } })
+
+hl.animation({ leaf = "global", enabled = false })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 2, bezier = "fade" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 2, bezier = "fade" })
+hl.animation({ leaf = "fadeSwitch", enabled = true, speed = 2, bezier = "fade" })
+hl.animation({ leaf = "fadeDim", enabled = true, speed = 2, bezier = "fade" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "fade" })
+hl.animation({ leaf = "specialWorkspaceIn", enabled = true, speed = 2, bezier = "fade", style = "slidefadevert" })
+hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 2, bezier = "fade", style = "slidefadevert" })
+
+-- -----------------------------------------------------------------------------
+-- 7. Helpers & Factories (Scratchpads)
+-- -----------------------------------------------------------------------------
 local function create_scratchpad(class, cmd, special_name, size, center)
 	hl.window_rule({
 		match = { class = class },
@@ -118,30 +152,36 @@ end
 local toggle_drop = create_scratchpad("kitty-drop", "kitty --app-id kitty-drop", "drop", { 1600, 900 }, false)
 local toggle_btop = create_scratchpad("btop-scratch", "kitty --app-id btop-scratch btop", "btop", { 1400, 800 }, true)
 
--- - - - App Launchers - - -
+-- -----------------------------------------------------------------------------
+-- 8. Keybindings (hl.bind)
+-- -----------------------------------------------------------------------------
 local mainMod = "SUPER"
 local browser = "firefox"
 local ipc = "noctalia msg"
+local scriptsDir = "/home/gsouza/.config/hypr/scripts"
 
+-- --- Application Launchers ---
 hl.bind(mainMod .. " + return", hl.dsp.exec_raw("kitty --title Kitty"))
-hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
+hl.bind(mainMod .. " + b", hl.dsp.exec_cmd(browser))
+hl.bind(mainMod .. " + h", hl.dsp.exec_cmd(scriptsDir .. "/KeyHints.sh"))
 
--- - - - Window Management - - -
-hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { repeating = true })
-hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.window.kill())
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
-hl.bind(mainMod .. " + M", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
-hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + O", function()
+-- --- Window Management ---
+hl.bind(mainMod .. " + q", hl.dsp.window.close(), { repeating = true })
+hl.bind("ALT + F4", hl.dsp.window.close(), { repeating = true })
+hl.bind(mainMod .. " + SHIFT + q", hl.dsp.window.kill())
+hl.bind(mainMod .. " + f", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
+hl.bind(mainMod .. " + m", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind(mainMod .. " + SHIFT + f", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mainMod .. " + o", function()
 	local w = hl.get_active_window()
 	if w then
 		hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
 		hl.dispatch(hl.dsp.window.pin())
 	end
 end)
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
+hl.bind(mainMod .. " + j", hl.dsp.layout("togglesplit"))
 
--- - - - Navigation & Focus - - -
+-- --- Focus & Navigation ---
 for _, dir in ipairs({ "left", "right", "up", "down" }) do
 	hl.bind(mainMod .. " + " .. dir, hl.dsp.focus({ direction = dir }))
 	hl.bind(mainMod .. " + SHIFT + " .. dir, hl.dsp.window.move({ direction = dir }))
@@ -151,31 +191,27 @@ for i = 1, 10 do
 	local key = i % 10
 	hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
 	hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i, follow = true }))
-	-- Move window to workspace without following
 	hl.bind(mainMod .. " + CTRL + " .. key, hl.dsp.window.move({ workspace = i, follow = false }))
 end
 
 hl.bind(mainMod .. " + TAB", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + SHIFT + TAB", hl.dsp.focus({ workspace = "e-1" }))
--- Inverted scroll direction: Up -> Prev (e-1), Down -> Next (e+1)
-hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
+-- --- Mouse Bindings ---
+-- Inverted scroll direction: Up -> Prev (e-1), Down -> Next (e+1)
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
--- - - - Layout & Resizing - - -
--- Resize with Equal/Minus (Omarchy style)
--- SUPER + = : Grow Right (x +50)
--- SUPER + - : Grow Left (x -50)
--- SUPER + SHIFT + = : Grow Up (y -50)
--- SUPER + SHIFT + - : Grow Down (y +50)
+-- --- Window Resizing ---
+-- Omarchy style (Equal/Minus)
 hl.bind(mainMod .. " + equal", hl.dsp.window.resize({ x = 50, y = 0, relative = true }), { repeating = true })
 hl.bind(mainMod .. " + minus", hl.dsp.window.resize({ x = -50, y = 0, relative = true }), { repeating = true })
 hl.bind(mainMod .. " + SHIFT + equal", hl.dsp.window.resize({ x = 0, y = -50, relative = true }), { repeating = true })
 hl.bind(mainMod .. " + SHIFT + minus", hl.dsp.window.resize({ x = 0, y = 50, relative = true }), { repeating = true })
 
--- Resize with Arrow Keys (Legacy/Alternative)
+-- Alternative (ALT + Arrow Keys)
 local resize_maps = {
 	{ key = "left", x = -50, y = 0 },
 	{ key = "right", x = 50, y = 0 },
@@ -190,31 +226,31 @@ for _, map in ipairs(resize_maps) do
 	)
 end
 
-hl.bind(mainMod .. " + SHIFT + L", function()
+-- --- Layout Controls ---
+hl.bind(mainMod .. " + SHIFT + l", function()
 	local current = hl.get_config("general.layout")
 	if current == "dwindle" then
 		hl.config({ general = { layout = "scrolling" } })
-		hl.notification.create({ text = "Layout: Scrolling", timeout = 2000, icon = "ok" })
+		hl.exec_cmd("notify-send 'Layout: Scrolling' -t 2000")
 	else
 		hl.config({ general = { layout = "dwindle" } })
-		hl.notification.create({ text = "Layout: Dwindle", timeout = 2000, icon = "ok" })
+		hl.exec_cmd("notify-send 'Layout: Dwindle' -t 2000")
 	end
 end)
 
--- Scrolling layout specific bindings
+-- Scrolling Layout Specifics
 hl.bind(mainMod .. " + period", hl.dsp.layout("move +col"))
 hl.bind(mainMod .. " + comma", hl.dsp.layout("swapcol l"))
 hl.bind(mainMod .. " + SHIFT + period", hl.dsp.layout("colresize +conf"))
 hl.bind(mainMod .. " + SHIFT + comma", hl.dsp.layout("colresize -conf"))
-hl.bind(mainMod .. " + C", hl.dsp.exec_raw("dispatch centerview"))
-hl.bind(mainMod .. " + SHIFT + X", hl.dsp.layout("consume_or_expel"))
+hl.bind(mainMod .. " + c", hl.dsp.layout("centerview"))
+hl.bind(mainMod .. " + SHIFT + x", hl.dsp.layout("consume_or_expel"))
 
--- - - - Scratchpads & Groups - - -
-hl.bind(mainMod .. " + T", toggle_drop)
+-- --- Scratchpads & Groups ---
+hl.bind(mainMod .. " + t", toggle_drop)
 hl.bind(mainMod .. " + F1", toggle_btop)
-
-hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mainMod .. " + SHIFT + S", function()
+hl.bind(mainMod .. " + s", hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + SHIFT + s", function()
 	local w = hl.get_active_window()
 	if w == nil then
 		return
@@ -226,28 +262,48 @@ hl.bind(mainMod .. " + SHIFT + S", function()
 	end
 end)
 
-hl.bind(mainMod .. " + G", hl.dsp.group.toggle())
+hl.bind(mainMod .. " + g", hl.dsp.group.toggle())
 hl.bind(mainMod .. " + bracketleft", hl.dsp.group.prev())
 hl.bind(mainMod .. " + bracketright", hl.dsp.group.next())
-hl.bind(mainMod .. " + SHIFT + G", hl.dsp.group.lock())
+hl.bind(mainMod .. " + SHIFT + g", hl.dsp.group.lock())
 
--- - - - System & Media (Noctalia) - - -
+-- --- System, Media & Noctalia Panels ---
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(ipc .. " panel-toggle launcher"))
-hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(ipc .. " panel-toggle clipboard"))
+hl.bind(mainMod .. " + v", hl.dsp.exec_cmd(ipc .. " panel-toggle clipboard"))
 hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd(ipc .. " screenshot-region"))
 hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd(ipc .. " screenshot-fullscreen"))
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(ipc .. " session logout"))
-hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(ipc .. " panel-toggle control-center"))
+hl.bind(mainMod .. " + l", hl.dsp.exec_cmd(ipc .. " session lock"))
+hl.bind(mainMod .. " + CTRL + l", hl.dsp.exec_cmd(ipc .. " session logout"))
+hl.bind(mainMod .. " + p", hl.dsp.exec_cmd(ipc .. " panel-toggle control-center"))
 hl.bind(mainMod .. " + F2", hl.dsp.exec_cmd(ipc .. " mic-mute"))
 
+-- --- Noctalia System Controls ---
+hl.bind(mainMod .. " + n", hl.dsp.exec_cmd(ipc .. " nightlight-toggle"))
+hl.bind(mainMod .. " + y", hl.dsp.exec_cmd(ipc .. " caffeine-toggle"))
+hl.bind(mainMod .. " + w", hl.dsp.exec_cmd(ipc .. " wallpaper-random"))
+hl.bind(mainMod .. " + SHIFT + t", hl.dsp.exec_cmd(ipc .. " theme-mode-toggle"))
+
+-- --- Hardware & Media Keys ---
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd(ipc .. " volume-up"))
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd(ipc .. " volume-down"))
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd(ipc .. " volume-mute"))
 hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd(ipc .. " brightness-up"))
 hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(ipc .. " brightness-down"))
 
--- - - - Autostart - - -
+-- Media playback controls
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(ipc .. " media toggle"))
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd(ipc .. " media toggle"))
+hl.bind("XF86MediaPlayPause", hl.dsp.exec_cmd(ipc .. " media toggle"))
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd(ipc .. " media next"))
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(ipc .. " media previous"))
+hl.bind("XF86AudioStop", hl.dsp.exec_cmd(ipc .. " media stop"))
+
+-- -----------------------------------------------------------------------------
+-- 9. Autostart Events
+-- -----------------------------------------------------------------------------
 hl.on("hyprland.start", function()
+	hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP SSH_AUTH_SOCK")
+	hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
 	hl.exec_cmd("noctalia")
 	hl.exec_cmd("wl-paste --watch cliphist store")
 end)
