@@ -24,7 +24,7 @@ yad --center \
     "SUPER + B" "Launch Browser" "firefox" \
     "SUPER + E" "File Manager" "kitty -e yazi" \
     "SUPER + D" "App Launcher" "Noctalia launcher" \
-    "SUPER + ALT + V" "Clipboard Manager" "Noctalia clipboard" \
+    "SUPER + V" "Clipboard Manager" "Noctalia clipboard" \
     "SUPER + P" "Control Center / Audio" "Noctalia CC" \
     "SUPER + SHIFT + E" "Noctalia Settings" "Noctalia Settings" \
     "SUPER + SHIFT + N" "Notification Panel" "Noctalia Notifications" \
@@ -39,6 +39,7 @@ yad --center \
     "SUPER + M" "Maximize" "Toggle maximized" \
     "SUPER + Space" "Float Toggle" "Toggle floating window" \
     "SUPER + ALT + Space" "Float All Windows" "float all" \
+    "SUPER + A" "Scroll Overview" "Toggle ScrollOverview" \
     "SUPER + O" "Float & Pin Window" "Float + Pin window" \
     "SUPER + SHIFT + I" "Toggle Split" "togglesplit" \
     "SUPER + G" "Toggle Group (Tabs)" "togglesgroup" \

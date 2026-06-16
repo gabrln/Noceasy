@@ -77,6 +77,22 @@ hl.config({
 	},
 	misc = { disable_hyprland_logo = true, focus_on_activate = false },
 	cursor = { no_warps = true, inactive_timeout = 3, hide_on_key_press = true },
+	plugin = {
+		scrolloverview = {
+			gesture_distance = 300, -- how far is the "max" for the gesture
+			scale = 0.5, -- preferred overview scale
+			workspace_gap = 100,
+			wallpaper = 0, -- 0: global only, 1: per-workspace only, 2: both
+			blur = false, -- blur only the main overview wallpaper
+
+			shadow = {
+				enabled = false,
+				range = 50,
+				render_power = 3,
+				color = 0xee1a1a1a,
+			},
+		},
+	},
 })
 
 -- -----------------------------------------------------------------------------
@@ -176,6 +192,9 @@ hl.bind("ALT + F4", hl.dsp.window.close(), { repeating = true })
 hl.bind(mainMod .. " + SHIFT + q", hl.dsp.window.kill())
 hl.bind(mainMod .. " + SHIFT + f", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 hl.bind(mainMod .. " + m", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind(mainMod .. " + a", function()
+	hl.plugin.scrolloverview.overview("toggle")
+end)
 hl.bind(mainMod .. " + space", function()
 	local w = hl.get_active_window()
 	if not w then return end
