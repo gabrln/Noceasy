@@ -28,4 +28,7 @@ known_hosts
 .config/rofi/
 .config/noctalia/
 
-
+# ===== Zsh modular configuration =====
+.config/zsh/plugins/
+.config/zsh/.zcompdump*
+.config/zsh/*.zwc
