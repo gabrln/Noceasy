@@ -41,7 +41,7 @@ shortcuts=(
   "Scrolling Layout :: SUPER + ALT + Comma (,) :: Decrease Column Width :: hyprctl dispatch layoutmsg colresize -conf"
   "Scrolling Layout :: SUPER + ALT + Period (.) :: Increase Column Width :: hyprctl dispatch layoutmsg colresize +conf"
   "Scrolling Layout :: SUPER + C :: Fit/Center Active Column :: hyprctl dispatch layoutmsg fit active"
-  "Scrolling Layout :: SUPER + SHIFT + X :: Consume or Expel Window :: hyprctl dispatch layoutmsg consume_or_expel"
+  "Scrolling Layout :: SUPER + SHIFT + X :: Consume or Expel Window :: hyprctl dispatch layoutmsg consume_or_expel next"
   "Scrolling Layout :: SUPER + SHIFT + P :: Promote Window to New Column :: hyprctl dispatch layoutmsg promote"
   
   "Navigation :: SUPER + Arrow Keys :: Move Focus :: hyprctl dispatch movefocus l/r/u/d"
