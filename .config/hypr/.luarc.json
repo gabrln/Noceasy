@@ -1,4 +1,3 @@
---It simply prevents the "h1" from being flagged by Hyprland in Lua.
 {
     "diagnostics.globals": [
         "hl"
