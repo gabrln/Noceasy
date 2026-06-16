@@ -106,3 +106,12 @@ function y() {
         [[ -n "$cwd" && "$cwd" != "$PWD" ]] && cd "$cwd"
     fi
 }
+
+# Nix package manager
+alias nxi="nix profile install nixpkgs#"
+alias nxu="nix profile remove"
+alias nxl="nix profile list"
+alias nxs="nix shell nixpkgs#"
+alias nxr="nix run nixpkgs#"
+alias nxsearch="nix search nixpkgs"
+alias nxd="nix develop"

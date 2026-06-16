@@ -166,6 +166,7 @@ local scriptsDir = "/home/gsouza/.config/hypr/scripts"
 hl.bind(mainMod .. " + return", hl.dsp.exec_raw("kitty --title Kitty"))
 hl.bind(mainMod .. " + b", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + h", hl.dsp.exec_cmd(scriptsDir .. "/KeyHints.sh"))
+hl.bind(mainMod .. " + SHIFT + h", hl.dsp.exec_cmd(scriptsDir .. "/AliasHints.sh"))
 hl.bind(mainMod .. " + d", hl.dsp.exec_cmd(ipc .. " panel-toggle launcher"))
 hl.bind(mainMod .. " + SHIFT + e", hl.dsp.exec_cmd(ipc .. " settings-toggle"))
 hl.bind(mainMod .. " + e", hl.dsp.exec_raw("kitty -e yazi"))

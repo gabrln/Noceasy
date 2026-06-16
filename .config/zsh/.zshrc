@@ -8,6 +8,11 @@ export TERMINAL="kitty"
 export QT_QPA_PLATFORMTHEME="qt6ct"
 export PATH="$HOME/.local/bin:$PATH"
 
+# Nix Integration
+if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+  . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+fi
+
 # History configuration
 XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 mkdir -p "$XDG_STATE_HOME/zsh"

@@ -86,4 +86,5 @@ yad --center \
     "Volume / Brightness Keys" "Media Controls" "Noctalia volume/brightness" \
     "Media Play / Pause / Next / Prev" "Media Playback" "Noctalia media" \
     "SUPER + F2" "Toggle Microphone Mute" "Noctalia mic-mute" \
-    "SUPER + H" "Show this Cheat Sheet" "KeyHints.sh"
+    "SUPER + H" "Show Hyprland Cheat Sheet" "KeyHints.sh" \
+    "SUPER + SHIFT + H" "Show Zsh/Nix Cheat Sheet" "AliasHints.sh"
