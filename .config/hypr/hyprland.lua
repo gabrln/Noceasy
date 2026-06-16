@@ -192,9 +192,6 @@ hl.bind("ALT + F4", hl.dsp.window.close(), { repeating = true })
 hl.bind(mainMod .. " + SHIFT + q", hl.dsp.window.kill())
 hl.bind(mainMod .. " + SHIFT + f", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 hl.bind(mainMod .. " + m", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
-hl.bind(mainMod .. " + a", function()
-	hl.plugin.scrolloverview.overview("toggle")
-end)
 hl.bind(mainMod .. " + space", function()
 	local w = hl.get_active_window()
 	if not w then return end
@@ -259,8 +256,11 @@ end
 hl.bind(mainMod .. " + TAB", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + SHIFT + TAB", hl.dsp.focus({ workspace = "e-1" }))
 
--- --- Window Switcher (Snappy Switcher) ---
-hl.bind("ALT + Tab", hl.dsp.exec_cmd("snappy-switcher next --mod alt"))
+-- --- Window Switcher (Scroll Overview) ---
+hl.bind("ALT + Tab", function()
+	hl.dispatch(hl.plugin.scrolloverview.overview("toggle"))
+	hl.exec_cmd("sleep 0.1 && hyprctl dispatch focuswindow active")
+end)
 
 -- --- Mouse Bindings ---
 -- Inverted scroll direction: Up -> Prev (e-1), Down -> Next (e+1)
@@ -410,5 +410,4 @@ hl.on("hyprland.start", function()
 	hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
 	hl.exec_cmd("noctalia")
 	hl.exec_cmd("wl-paste --watch cliphist store")
-	hl.exec_cmd("snappy-switcher --daemon")
 end)

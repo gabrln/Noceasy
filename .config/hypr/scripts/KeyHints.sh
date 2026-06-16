@@ -39,7 +39,6 @@ yad --center \
     "SUPER + M" "Maximize" "Toggle maximized" \
     "SUPER + Space" "Float Toggle" "Toggle floating window" \
     "SUPER + ALT + Space" "Float All Windows" "float all" \
-    "SUPER + A" "Scroll Overview" "Toggle ScrollOverview" \
     "SUPER + O" "Float & Pin Window" "Float + Pin window" \
     "SUPER + SHIFT + I" "Toggle Split" "togglesplit" \
     "SUPER + G" "Toggle Group (Tabs)" "togglesgroup" \
@@ -54,7 +53,7 @@ yad --center \
     "SUPER + CTRL + [0-9]" "Move Window Silently to Workspace" "movetoworkspacesilent" \
     "SUPER + TAB / SHIFT + TAB" "Next / Prev Workspace" "workspace e+/-1" \
     "SUPER + Mouse Scroll" "Next / Prev Workspace" "workspace e+/-1" \
-    "ALT + TAB" "Window Switcher (Next)" "snappy-switcher next" \
+    "ALT + TAB" "Scroll Overview" "Toggle ScrollOverview" \
     "" "" "" \
     "SUPER + N" "Toggle Night Light (Azul)" "Noctalia nightlight" \
     "SUPER + Y" "Toggle Caffeine (Idle Inhibitor)" "Noctalia caffeine" \
