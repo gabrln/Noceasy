@@ -1,0 +1,18 @@
+# ~/.config/starship.toml
+# Custom minimal single-line prompt with Vi-mode support
+
+format = "$directory$character"
+
+# Add a newline at the beginning of the prompt
+add_newline = false
+
+[directory]
+style = "bold blue"
+truncation_length = 4
+truncate_to_repo = true
+read_only = " 󰌾"
+
+[character]
+success_symbol = "[ ❯ ](bold green)"
+error_symbol = "[ ❯ ](bold red)"
+vicmd_symbol = "[ ❮ ](bold yellow)"
