@@ -1,0 +1,52 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/minimax-m2.7",
+  "small_model": "opencode-go/deepseek-v4-flash",
+  "instructions": [
+    "/home/gabrln/Documents/obsidian/C04 Agent/Agent Workflow.md",
+    "/home/gabrln/Documents/obsidian/C04 Agent/Reference/Config Reference.md"
+  ],
+  "skills": {
+    "paths": ["/home/gabrln/Documents/obsidian/C04 Agent/Skills"]
+  },
+  "agent": {
+    "build": {
+      "model": "opencode-go/minimax-m2.7"
+    },
+    "plan": {
+      "model": "opencode-go/deepseek-v4-flash"
+    },
+    "explore": {
+      "model": "opencode-go/deepseek-v4-flash"
+    },
+    "general": {
+      "model": "opencode-go/deepseek-v4-flash"
+    }
+  },
+  "command": {
+    "check": {
+      "description": "Executa simulação do decman no repositório",
+      "template": "Execute `sudo decman --source /home/gabrln/projects/Arch-gabrln/source.py --dry-run` e reporte o resultado completo."
+    },
+    "rebuild": {
+      "description": "Aplica as configurações declarativas do decman",
+      "template": "Execute `sudo decman --source /home/gabrln/projects/Arch-gabrln/source.py` e reporte o resultado."
+    }
+  },
+  "permission": {
+    "bash": {
+      "git *": "allow",
+      "decman *": "allow",
+      "mkdir *": "allow",
+      "*": "ask"
+    }
+  },
+  "compaction": {
+    "auto": true,
+    "tail_turns": 25
+  },
+  "tool_output": {
+    "max_lines": 500,
+    "max_bytes": 102400
+  }
+}

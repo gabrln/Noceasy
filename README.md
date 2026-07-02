@@ -13,20 +13,22 @@ NOCTALIA V5 + MANGOWM + CACHYOS.
 | Editor | Neovim |
 | Pacotes | yay (AUR helper) |
 
-## Instalação
+## Instalação e Gerenciamento Declarativo (decman)
+
+Agora a configuração do sistema e pacotes é gerenciada declarativamente com o **decman**.
 
 ```bash
-# Clonar
-git clone git@github.com:gabrln/Arch-gabrln.git ~/dotfiles
+# 1. Execute o script de setup para instalar o decman
+./decman_setup.sh
 
-# Symlinkar (ou usar stow)
-ln -sf ~/dotfiles/.zshenv ~/.zshenv
-stow -R -d ~/dotfiles -t ~/ .config
+# 2. Simule as alterações declaradas
+sudo decman --source ./source.py --dry-run
 
-# Instalar pacotes
-sudo pacman -S $(grep -v '^#' ~/dotfiles/packages.txt)
-
-# AUR
-yay -S bibata-cursor-theme
+# 3. Aplique as configurações e instale os pacotes declarados
+sudo decman --source ./source.py
 ```
+
+> [!NOTE]
+> O arquivo [source.py](file:///home/gabrln/projects/Arch-gabrln/source.py) contém a declaração de todos os pacotes (Pacman e AUR), arquivos de configuração (como `.zshenv` e configurações de estado do Noctalia) e diretórios do `.config`.
+
 

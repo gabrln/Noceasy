@@ -32,3 +32,7 @@ known_hosts
 .config/zsh/plugins/
 .config/zsh/.zcompdump*
 .config/zsh/*.zwc
+
+# ===== Python cache =====
+__pycache__/
+*.pyc
