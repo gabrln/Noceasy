@@ -1,9 +1,6 @@
 export EDITOR="nvim"
-export SSH_ASKPASS="/usr/bin/ksshaskpass"
-export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
 export TERMINAL="kitty"
 export QT_QPA_PLATFORMTHEME="qt6ct"
-export PATH="$HOME/.local/bin:$PATH"
 
 eval "$(atuin init zsh)"
 
