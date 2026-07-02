@@ -37,11 +37,6 @@ else
   _zplugin_load zsh-users zsh-autosuggestions
 fi
 
-if [[ -f /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh ]]; then
-  source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-else
-  _zplugin_load zsh-users zsh-history-substring-search
-fi
 
 _zplugin_load zdharma-continuum fast-syntax-highlighting fast-syntax-highlighting.plugin.zsh
 
