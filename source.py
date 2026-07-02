@@ -35,7 +35,8 @@ decman.pacman.packages |= {
     
     # Temas, Protons e Ferramentas CachyOS/Arch
     "wl-clip-persist", "papirus-icon-theme", "adw-gtk-theme",
-    "protonup-qt", "prismlauncher", "spotify-launcher"
+    "protonup-qt", "prismlauncher", "spotify-launcher",
+    "gnome-keyring", "seahorse"
 }
 
 # 3. Declarar Pacotes do AUR (via yay/paru)
@@ -59,6 +60,11 @@ decman.systemd.enabled_units |= {
 # Greetd / Noctalia Greeter Configuration
 decman.files["/etc/greetd/config.toml"] = File(
     source_file=f"{repo_dir}/.config/greetd/config.toml",
+    owner="root"
+)
+
+decman.files["/etc/pam.d/greetd"] = File(
+    source_file=f"{repo_dir}/.config/greetd/pam_greetd",
     owner="root"
 )
 
