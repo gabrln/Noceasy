@@ -83,6 +83,7 @@ docker-status() {
 alias dk-start="docker-start"
 alias dk-stop="docker-stop"
 alias dk-status="docker-status"
+alias zplu="zplugin-update"
 
 function y() {
     local tmp=$(mktemp -t yazi-cwd.XXXXX)
