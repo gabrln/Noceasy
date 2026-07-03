@@ -70,7 +70,7 @@ yay -S --needed --noconfirm "${AUR_PKGS[@]}"
 # 5. Install Flatpak Packages
 if command -v flatpak &>/dev/null; then
     echo -e "${BLUE}Installing Flatpak packages...${NC}"
-    flatpak install -y flathub com.github.wwmm.easyeffects
+    flatpak install -y --system flathub com.github.wwmm.easyeffects
 fi
 
 # 6. Create Symlinks for User Configurations
