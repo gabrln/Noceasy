@@ -38,7 +38,7 @@ layout {
         proportion 0.667
     }
     focus-ring {
-        width 2
+        width 1
         active-color "#cba6f7"
         inactive-color "#646789"
     }
