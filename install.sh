@@ -75,6 +75,8 @@ yay -S --needed --noconfirm "${AUR_PKGS[@]}"
 # 5. Install Flatpak Packages
 if command -v flatpak &>/dev/null; then
     print_step "Installing Flatpak packages..."
+    # Ensure flathub repository is registered system-wide first
+    flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     flatpak install -y --system flathub com.github.wwmm.easyeffects
 fi
 
@@ -100,8 +102,9 @@ for cfg in "${CONFIGS[@]}"; do
     TARGET_PATH="$HOME/.config/$cfg"
     # Backup physical directories if they exist and are not symlinks
     if [ -d "$TARGET_PATH" ] && [ ! -L "$TARGET_PATH" ]; then
-        echo -e "${YELLOW}Backing up existing directory: $cfg -> ${cfg}.backup${NC}"
-        mv "$TARGET_PATH" "${TARGET_PATH}.backup"
+        BACKUP_PATH="${TARGET_PATH}.backup.$(date +%Y%m%d_%H%M%S)"
+        echo -e "${YELLOW}Backing up existing directory: $cfg -> $(basename "$BACKUP_PATH")${NC}"
+        mv "$TARGET_PATH" "$BACKUP_PATH"
     fi
     ln -sfT "$REPO_DIR/.config/$cfg" "$TARGET_PATH"
 done
@@ -204,7 +207,8 @@ sudo mkdir -p /etc/greetd
 sudo cp "$REPO_DIR/.config/greetd/config.toml" /etc/greetd/config.toml
 sudo cp "$REPO_DIR/.config/greetd/pam_greetd" /etc/pam.d/greetd
 
-# Wayland Session desktop entry
+# Wayland Session desktop entry (Ensure parent folder exists)
+sudo mkdir -p /usr/share/wayland-sessions
 sudo cp "$REPO_DIR/.config/niri/niri.desktop" /usr/share/wayland-sessions/niri.desktop
 
 # Noctalia Greeter settings
@@ -216,11 +220,11 @@ sudo chmod 644 /var/lib/noctalia-greeter/greeter.toml
 # 9. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
 print_step "Linking user themes for root application accessibility..."
 sudo mkdir -p /root/.config
-sudo ln -sf "$HOME/.config/gtk-3.0" /root/.config/gtk-3.0
-sudo ln -sf "$HOME/.config/gtk-4.0" /root/.config/gtk-4.0
-sudo ln -sf "$HOME/.config/qt6ct" /root/.config/qt6ct
+sudo ln -sfT "$HOME/.config/gtk-3.0" /root/.config/gtk-3.0
+sudo ln -sfT "$HOME/.config/gtk-4.0" /root/.config/gtk-4.0
+sudo ln -sfT "$HOME/.config/qt6ct" /root/.config/qt6ct
 sudo mkdir -p /root/.local/share
-sudo ln -sf "$HOME/.local/share/icons" /root/.local/share/icons
+sudo ln -sfT "$HOME/.local/share/icons" /root/.local/share/icons
 
 # 10. Enable Systemd Services
 print_step "Enabling Systemd units..."
