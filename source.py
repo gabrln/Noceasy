@@ -132,6 +132,23 @@ for script in mango_scripts:
     )
 
 
+# Explicit Niri Config file
+decman.files[f"{user_home}/.config/niri/config.kdl"] = File(
+    source_file=f"{repo_dir}/.config/niri/config.kdl",
+    owner=sudo_user
+)
+
+# Explicit Mango Config files
+decman.files[f"{user_home}/.config/mango/config.conf"] = File(
+    source_file=f"{repo_dir}/.config/mango/config.conf",
+    owner=sudo_user
+)
+
+decman.files[f"{user_home}/.config/mango/scripts/lib_state.sh"] = File(
+    source_file=f"{repo_dir}/.config/mango/scripts/lib_state.sh",
+    owner=sudo_user
+)
+
 # Mimeapps e Starship (arquivos avulsos em ~/.config)
 decman.files[f"{user_home}/.config/mimeapps.list"] = File(
     source_file=f"{repo_dir}/.config/mimeapps.list",
@@ -149,11 +166,9 @@ configs = [
     "kitty",
     "zellij",
     "yazi",
-    "mango",
     "fastfetch",
     "nvim",
-    "opencode",
-    "niri"
+    "opencode"
 ]
 
 for cfg in configs:
