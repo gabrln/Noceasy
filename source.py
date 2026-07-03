@@ -2,6 +2,14 @@ import os
 import decman
 from decman import File, Directory
 
+decman.execution_order = [
+    "files",
+    "pacman",
+    "aur",
+    "flatpak",
+    "systemd"
+]
+
 # 1. Obter usuário atual e diretório home
 # Decman roda como root, então usamos SUDO_USER para localizar o home do usuário correto
 sudo_user = os.environ.get("SUDO_USER", "gabrln")
@@ -51,7 +59,12 @@ decman.aur.packages |= {
     "bibata-cursor-theme"
 }
 
-# 4. Habilitar Unidades Systemd
+# 4. Declarar Pacotes Flatpak
+decman.flatpak.packages |= {
+    "com.github.wwmm.easyeffects"
+}
+
+# 5. Habilitar Unidades Systemd
 decman.systemd.enabled_units |= {
     "docker.service",
     "bluetooth.service",
@@ -59,7 +72,7 @@ decman.systemd.enabled_units |= {
     "greetd.service"
 }
 
-# 5. Declarar Arquivos Individuais
+# 6. Declarar Arquivos Individuais
 # Greetd / Noctalia Greeter Configuration
 decman.files["/etc/greetd/config.toml"] = File(
     source_file=f"{repo_dir}/.config/greetd/config.toml",
@@ -94,7 +107,7 @@ decman.files[f"{user_home}/.config/starship.toml"] = File(
     owner=sudo_user
 )
 
-# 6. Declarar Diretórios de Configuração (.config)
+# 7. Declarar Diretórios de Configuração (.config)
 configs = [
     "zsh",
     "kitty",

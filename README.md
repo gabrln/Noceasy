@@ -65,6 +65,7 @@ Esta é a lista organizada de pacotes gerenciados pelo `decman` no sistema para 
 * **`obsidian`**: Base de conhecimento e notas em markdown local.
 * **`spotify-launcher`**: Inicializador oficial do cliente de streaming de música Spotify.
 * **`prismlauncher`**: Launcher de Minecraft livre e open source.
+* **`easyeffects` (Flatpak)**: Equalizador e processador de efeitos de áudio profissional (PipeWire).
 
 ### 4. CLI Modern Tooling & Utilidades
 * **`zsh`**: Shell principal configurado em `~/.config/zsh`.
