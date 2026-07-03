@@ -10,13 +10,13 @@ decman.execution_order = [
     "systemd"
 ]
 
-# 1. Obter usuário atual e diretório home
-# Decman roda como root, então usamos SUDO_USER para localizar o home do usuário correto
+# 1. User and home directory
+# Locate correct user home via SUDO_USER since decman runs as root
 sudo_user = os.environ.get("SUDO_USER", "gabrln")
 user_home = f"/home/{sudo_user}"
 repo_dir = f"{user_home}/projects/Arch-gabrln"
 
-# Evitar que o decman remova os pacotes explicitamente instalados locais
+# Prevent decman from removing locally installed packages
 import subprocess
 try:
     native_pkgs = subprocess.check_output(["pacman", "-Qqen"]).decode().splitlines()
@@ -27,44 +27,44 @@ try:
 except Exception:
     pass
 
-# 2. Declarar Pacotes Pacman (Oficiais)
+# 2. Pacman packages (Official)
 decman.pacman.packages |= {
-    # Sistema Base e Ferramentas essenciais
+    # Base system
     "base", "base-devel", "linux-cachyos", "linux-cachyos-headers",
     "git", "git-delta", "docker", "flatpak", "brightnessctl",
     "zsh", "snapper", "just",
     
-    # CLI Modern Tooling (do Zsh & aliases)
+    # Zsh and terminal tooling
     "atuin", "bat", "eza", "fzf", "ripgrep", "fd", "zoxide", "starship", "direnv",
     "fastfetch", "btop", "grim", "slurp",
     
-    # Aplicações e Utilitários
+    # User applications
     "neovim", "kitty", "zellij", "yazi", "nautilus", "vesktop",
     "cliphist", "wl-clipboard", "duf", "gping", "tealdeer", "procs", "cava",
     "mpv", "swayimg", "zathura", "file-roller", "rclone",
-    "firefox", "obsidian", "pavucontrol", "nwg-look", "xdg-desktop-portal-wlr",
+    "firefox", "obsidian", "pavucontrol", "nwg-look", "xdg-desktop-portal-gnome", "xdg-desktop-portal-gtk",
     
-    # Temas, Protons e Ferramentas CachyOS/Arch
+    # Themes and tools
     "wl-clip-persist", "papirus-icon-theme", "adw-gtk-theme",
     "protonup-qt", "prismlauncher", "spotify-launcher",
     "gnome-keyring", "seahorse", "rtkit", "niri"
 }
 
-# 3. Declarar Pacotes do AUR (via yay/paru)
+# 3. AUR packages (via yay/paru)
 decman.aur.packages |= {
     "decman",
     "noctalia-git",
     "noctalia-greeter-git",
-    "mangowm-git",
-    "bibata-cursor-theme"
+    "bibata-cursor-theme",
+    "niri-scratchpad-rs-git"
 }
 
-# 4. Declarar Pacotes Flatpak
+# 4. Flatpak packages
 decman.flatpak.packages |= {
     "com.github.wwmm.easyeffects"
 }
 
-# 5. Habilitar Unidades Systemd
+# 5. Systemd units
 decman.systemd.enabled_units |= {
     "docker.service",
     "bluetooth.service",
@@ -72,8 +72,8 @@ decman.systemd.enabled_units |= {
     "greetd.service"
 }
 
-# 6. Declarar Arquivos Individuais
-# Greetd / Noctalia Greeter Configuration
+# 6. Individual files
+# Greetd / Noctalia configuration
 decman.files["/etc/greetd/config.toml"] = File(
     source_file=f"{repo_dir}/.config/greetd/config.toml",
     owner="root"
@@ -84,30 +84,25 @@ decman.files["/etc/pam.d/greetd"] = File(
     owner="root"
 )
 
-# Niri session silent launch
+# Niri session desktop entry
 decman.files["/usr/share/wayland-sessions/niri.desktop"] = File(
     source_file=f"{repo_dir}/.config/niri/niri.desktop",
     owner="root"
 )
 
-# .zshenv do Zsh
+# Zsh env
 decman.files[f"{user_home}/.zshenv"] = File(
     source_file=f"{repo_dir}/.zshenv",
     owner=sudo_user
 )
 
-# Noctalia Templates (Apenas templates estáticos, sem gerenciar o settings.toml mutável)
+# Noctalia templates (static templates only)
 decman.files[f"{user_home}/.config/noctalia/user-templates.toml"] = File(
     source_file=f"{repo_dir}/.config/noctalia/user-templates.toml",
     owner=sudo_user
 )
 
-# Niri Scripts (com permissão de execução explícita)
-decman.files[f"{user_home}/.config/niri/scripts/ToggleScratchpad.py"] = File(
-    source_file=f"{repo_dir}/.config/niri/scripts/ToggleScratchpad.py",
-    permissions=0o755,
-    owner=sudo_user
-)
+
 
 decman.files[f"{user_home}/.config/niri/scripts/KeyHints.sh"] = File(
     source_file=f"{repo_dir}/.config/niri/scripts/KeyHints.sh",
@@ -128,41 +123,13 @@ decman.files[f"{user_home}/.config/niri/scripts/AltF4.sh"] = File(
 )
 
 
-# Mango Scripts (com permissão de execução explícita)
-mango_scripts = [
-    "AltF4.sh",
-    "KeyHints.sh",
-    "ToggleBlur.sh",
-    "ToggleGamemode.sh",
-    "WindowInfo.sh"
-]
-
-for script in mango_scripts:
-    decman.files[f"{user_home}/.config/mango/scripts/{script}"] = File(
-        source_file=f"{repo_dir}/.config/mango/scripts/{script}",
-        permissions=0o755,
-        owner=sudo_user
-    )
-
-
 # Explicit Niri Config file
 decman.files[f"{user_home}/.config/niri/config.kdl"] = File(
     source_file=f"{repo_dir}/.config/niri/config.kdl",
     owner=sudo_user
 )
 
-# Explicit Mango Config files
-decman.files[f"{user_home}/.config/mango/config.conf"] = File(
-    source_file=f"{repo_dir}/.config/mango/config.conf",
-    owner=sudo_user
-)
-
-decman.files[f"{user_home}/.config/mango/scripts/lib_state.sh"] = File(
-    source_file=f"{repo_dir}/.config/mango/scripts/lib_state.sh",
-    owner=sudo_user
-)
-
-# Mimeapps e Starship (arquivos avulsos em ~/.config)
+# Mimeapps and Starship config files
 decman.files[f"{user_home}/.config/mimeapps.list"] = File(
     source_file=f"{repo_dir}/.config/mimeapps.list",
     owner=sudo_user
@@ -173,7 +140,18 @@ decman.files[f"{user_home}/.config/starship.toml"] = File(
     owner=sudo_user
 )
 
-# 7. Declarar Diretórios de Configuração (.config)
+# User Dirs configurations
+decman.files[f"{user_home}/.config/user-dirs.dirs"] = File(
+    source_file=f"{repo_dir}/.config/user-dirs.dirs",
+    owner=sudo_user
+)
+
+decman.files[f"{user_home}/.config/user-dirs.locale"] = File(
+    source_file=f"{repo_dir}/.config/user-dirs.locale",
+    owner=sudo_user
+)
+
+# 7. Config directories (.config)
 configs = [
     "zsh",
     "kitty",
@@ -181,7 +159,10 @@ configs = [
     "yazi",
     "fastfetch",
     "nvim",
-    "opencode"
+    "opencode",
+    "gtk-3.0",
+    "gtk-4.0",
+    "xdg-desktop-portal"
 ]
 
 for cfg in configs:

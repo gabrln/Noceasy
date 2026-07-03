@@ -1,11 +1,13 @@
-// Niri Configuration for Noctalia Shell
-// Translated from MangoWM config.conf
+prefer-no-csd
 
 environment {
     XCURSOR_THEME "Bibata-Modern-Classic"
     XCURSOR_SIZE "24"
     QT_QPA_PLATFORMTHEME "qt6ct"
     QT_QPA_PLATFORM "wayland"
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+    MOZ_ENABLE_WAYLAND "1"
+    QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
 }
 
 input {
@@ -46,10 +48,11 @@ layout {
     border {
         off
     }
+    center-focused-column "on-overflow"
 }
 
 
-// 9 workspaces fixos + 1 dinamico do Niri = 10 total (igual as 10 tags do MangoWM)
+// 10 workspaces total
 workspace "1" { }
 workspace "2" { }
 workspace "3" { }
@@ -59,6 +62,7 @@ workspace "6" { }
 workspace "7" { }
 workspace "8" { }
 workspace "9" { }
+workspace "stash" { }
 
 // Overview: stationary wallpaper (Option 2 from Noctalia docs)
 // The wallpaper layer is placed on the backdrop so it shows in overview
@@ -83,6 +87,37 @@ spawn-at-startup "sh" "-c" "sleep 3 && flatpak run com.github.wwmm.easyeffects -
 window-rule {
     geometry-corner-radius 5
     clip-to-geometry true
+}
+
+// File dialogs - Open/Save/Select
+window-rule {
+    match title=r#".*(Open|Save|Select).*"#
+    match title=r#".*File.*"#
+    match app-id=r#"org\.gtk\.FileChooserDialog"#
+    open-floating true
+}
+
+// System/Authentication dialogs
+window-rule {
+    match title=r#".*(Dialog|Properties|Preferences|Settings|Rename|Authentication).*"#
+    match app-id=r#"zenity"#
+    match app-id=r#"pavucontrol"#
+    open-floating true
+}
+
+// Firefox Picture-in-Picture float
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+// Maximize browsers and editors by default
+window-rule {
+    match app-id=r#"firefox"#
+    match app-id=r#"google-chrome"#
+    match app-id=r#"code"#
+    match app-id=r#"obsidian$"#
+    open-maximized true
 }
 
 // Window rules for Noctalia settings panel
@@ -146,7 +181,7 @@ debug {
     honor-xdg-activation-with-invalid-serial
 }
 
-// Suprimir overlay de atalhos padrão do Niri no startup
+// Skip Niri's default hotkey overlay at startup
 hotkey-overlay {
     skip-at-startup
 }
@@ -172,12 +207,12 @@ binds {
     Ctrl+Alt+L { spawn "noctalia" "msg" "session" "lock"; }
     Mod+F2 { spawn "noctalia" "msg" "mic-mute"; }
     
-    // Custom Scratchpads (emulated via ToggleScratchpad.py)
-    Mod+Shift+Return { spawn "/home/gabrln/.config/niri/scripts/ToggleScratchpad.py" "kitty-drop" "kitty" "--class" "kitty-drop"; }
-    Mod+F1 { spawn "/home/gabrln/.config/niri/scripts/ToggleScratchpad.py" "btop-scratch" "kitty" "--class" "btop-scratch" "-e" "btop"; }
+    // Custom Scratchpads (managed via niri-scratchpad-rs)
+    Mod+Shift+Return { spawn "niri-scratchpad" "target" "--spawn" "kitty --class kitty-drop" "appid" "kitty-drop"; }
+    Mod+F1 { spawn "niri-scratchpad" "target" "--spawn" "kitty --class btop-scratch -e btop" "appid" "btop-scratch"; }
     
-    // Cheatsheet Menu (using Niri's script)
-    Mod+H { spawn "kitty" "--class" "keyhints-scratch" "-e" "/home/gabrln/.config/niri/scripts/KeyHints.sh"; }
+    // Cheatsheet Menu (now also toggleable via scratchpad!)
+    Mod+H { spawn "niri-scratchpad" "target" "--spawn" "kitty --class keyhints-scratch -e /home/gabrln/.config/niri/scripts/KeyHints.sh" "appid" "keyhints-scratch"; }
     
     // Window Info Script
     Mod+Shift+D { spawn "/home/gabrln/.config/niri/scripts/WindowInfo.sh"; }
@@ -274,3 +309,5 @@ binds {
     // Exit session
     Ctrl+Alt+Delete { quit; }
 }
+
+include "noctalia.kdl"

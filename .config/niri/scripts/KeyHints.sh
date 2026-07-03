@@ -28,7 +28,7 @@ shortcuts=(
   "Noctalia  ::  SUPER + SHIFT + P          ::  Logout Menu                   ::  noctalia msg panel-toggle session"
   "Noctalia  ::  SUPER + I                  ::  Noctalia Settings             ::  noctalia msg settings-toggle"
   "Noctalia  ::  SUPER + SHIFT + N          ::  Notification Panel            ::  noctalia msg panel-toggle control-center notifications"
-  "Noctalia  ::  SUPER + SHIFT + D          ::  Active Window Info            ::  $HOME/.config/mango/scripts/WindowInfo.sh"
+  "Noctalia  ::  SUPER + SHIFT + D          ::  Active Window Info            ::  $HOME/.config/niri/scripts/WindowInfo.sh"
   "Noctalia  ::  CTRL + ALT + L             ::  Lock Screen                   ::  noctalia msg session lock"
   "Noctalia  ::  SUPER + N                  ::  Toggle Night Light            ::  noctalia msg nightlight-toggle"
   "Noctalia  ::  SUPER + Y                  ::  Toggle Caffeine (No Sleep)    ::  noctalia msg caffeine-toggle"

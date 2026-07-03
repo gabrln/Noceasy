@@ -34,7 +34,7 @@ alias search="yay -Ss"
 alias make="make -j\$(nproc)"
 alias ninja="ninja -j\$(nproc)"
 
-alias conf-mango="nvim ~/.config/mango/mango.conf"
+alias conf-niri="nvim ~/.config/niri/config.kdl"
 alias conf-zsh="nvim ~/.config/zsh/.zshrc"
 alias conf-kitty="nvim ~/.config/kitty/kitty.conf"
 alias conf-decman="nvim ~/projects/Arch-gabrln/source.py"
