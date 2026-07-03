@@ -30,6 +30,7 @@ output "eDP-1" {
 
 layout {
     gaps 8
+    background-color "transparent"
     default-column-width { proportion 0.5; }
     preset-column-widths {
         proportion 0.333
@@ -42,6 +43,31 @@ layout {
         inactive-color "#646789"
     }
     border {
+        off
+    }
+}
+
+// Fixed 10 workspaces (persistent, like MangoWM tags)
+workspace "1" { }
+workspace "2" { }
+workspace "3" { }
+workspace "4" { }
+workspace "5" { }
+workspace "6" { }
+workspace "7" { }
+workspace "8" { }
+workspace "9" { }
+workspace "10" { }
+
+// Overview: stationary wallpaper (Option 2 from Noctalia docs)
+// The wallpaper layer is placed on the backdrop so it shows in overview
+layer-rule {
+    match namespace="^noctalia-wallpaper"
+    place-within-backdrop true
+}
+
+overview {
+    workspace-shadow {
         off
     }
 }
@@ -210,6 +236,7 @@ binds {
     Mod+7 { focus-workspace 7; }
     Mod+8 { focus-workspace 8; }
     Mod+9 { focus-workspace 9; }
+    Mod+0 { focus-workspace 10; }
     
     // Move window to workspace
     Mod+Shift+1 { move-window-to-workspace 1; }
@@ -221,6 +248,7 @@ binds {
     Mod+Shift+7 { move-window-to-workspace 7; }
     Mod+Shift+8 { move-window-to-workspace 8; }
     Mod+Shift+9 { move-window-to-workspace 9; }
+    Mod+Shift+0 { move-window-to-workspace 10; }
     
     // Tab based workspace switching
     Mod+Tab { focus-workspace-down; }
