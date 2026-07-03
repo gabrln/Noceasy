@@ -264,6 +264,16 @@ binds {
     // Overview mode
     Alt+Tab { toggle-overview; }
     
+    // Mouse dragging (mover e redimensionar janelas flutuantes/colunas)
+    Mod+MouseLeft  { start-mouse-move; }
+    Mod+MouseRight { start-mouse-resize; }
+    
+    // Mouse wheel scroll to switch workspaces (SUPER + Scroll)
+    Mod+WheelScrollDown { focus-workspace-down; }
+    Mod+WheelScrollUp   { focus-workspace-up; }
+    Mod+Shift+WheelScrollDown { move-window-to-workspace-down; }
+    Mod+Shift+WheelScrollUp   { move-window-to-workspace-up; }
+    
     // Exit session
     Ctrl+Alt+Delete { quit; }
 }
