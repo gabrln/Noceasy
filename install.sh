@@ -60,7 +60,7 @@ OFFICIAL_PKGS=(
     # Themes and tools
     wl-clip-persist papirus-icon-theme adw-gtk-theme protonup-qt prismlauncher spotify-launcher gnome-keyring seahorse rtkit niri
     # System utilities & essentials
-    rsync wget openssh pv hwinfo meld fsarchiver nano nano-syntax-highlighting python-defusedxml python-packaging
+    rsync wget openssh pv hwinfo meld fsarchiver nano python-defusedxml python-packaging
 )
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PKGS[@]}"
 
