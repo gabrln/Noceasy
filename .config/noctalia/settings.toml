@@ -1,0 +1,101 @@
+[bar.default]
+center = [ "wallpaper", "clock", "clipboard" ]
+end = [
+    "media",
+    "tray",
+    "notifications",
+    "network",
+    "bluetooth",
+    "volume",
+    "brightness",
+    "battery",
+    "control-center",
+    "session"
+]
+shadow = false
+start = [ "launcher", "workspaces" ]
+
+[dock]
+shadow = false
+
+[location]
+auto_locate = true
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = [ "lockscreen-login-box@eDP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 70.0
+    box_width = 400.0
+    cx = 960.0
+    cy = 961.0
+    output = "eDP-1"
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        input_opacity = 1.0
+        input_radius = 6.0
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+        show_password_hint = true
+
+[shell]
+lang = "pt-BR"
+launch_apps_as_systemd_services = true
+polkit_agent = true
+telemetry_enabled = true
+
+    [shell.launcher]
+    categories = false
+
+    [shell.panel]
+    control_center_placement = "floating"
+    session_placement = "floating"
+    shadow = false
+    wallpaper_placement = "floating"
+
+    [shell.screen_corners]
+    enabled = true
+
+    [shell.screenshot]
+    confirm_region = true
+    directory = "/home/gabrln/Pictures/Screenshots"
+    pipe_to_command = true
+
+[theme]
+builtin = "Catppuccin"
+mode = "dark"
+source = "builtin"
+
+    [theme.templates]
+    builtin_ids = [ "btop", "gtk3", "gtk4", "kitty", "mango", "niri", "qt", "starship" ]
+    community_ids = [ "pywalfox", "neovim", "discord" ]
+
+[wallpaper.default]
+path = "/home/gabrln/Pictures/Wallpapers/083.jpg"
+
+[wallpaper.last]
+path = "/home/gabrln/Pictures/Wallpapers/083.jpg"
+
+[wallpaper.monitors.eDP-1]
+path = "/home/gabrln/Pictures/Wallpapers/083.jpg"
+
+[widget.network]
+show_label = false
+
+[widget.tray]
+detached_panel = true
+drawer = true
+pinned = [ "Shelly" ]
