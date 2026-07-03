@@ -90,6 +90,12 @@ decman.files[f"{user_home}/.zshenv"] = File(
     owner=sudo_user
 )
 
+# Noctalia Templates (Apenas templates estáticos, sem gerenciar o settings.toml mutável)
+decman.files[f"{user_home}/.config/noctalia/user-templates.toml"] = File(
+    source_file=f"{repo_dir}/.config/noctalia/user-templates.toml",
+    owner=sudo_user
+)
+
 
 # Mimeapps e Starship (arquivos avulsos em ~/.config)
 decman.files[f"{user_home}/.config/mimeapps.list"] = File(
