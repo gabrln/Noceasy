@@ -24,14 +24,17 @@ decman.pacman.packages |= {
     # Sistema Base e Ferramentas essenciais
     "base", "base-devel", "linux-cachyos", "linux-cachyos-headers",
     "git", "git-delta", "docker", "flatpak", "brightnessctl",
+    "zsh", "snapper", "just",
     
     # CLI Modern Tooling (do Zsh & aliases)
     "atuin", "bat", "eza", "fzf", "ripgrep", "fd", "zoxide", "starship", "direnv",
+    "fastfetch", "btop", "grim", "slurp",
     
     # Aplicações e Utilitários
     "neovim", "kitty", "zellij", "yazi", "nautilus", "vesktop",
     "cliphist", "wl-clipboard", "duf", "gping", "tealdeer", "procs", "cava",
     "mpv", "swayimg", "zathura", "file-roller", "rclone",
+    "firefox", "obsidian", "pavucontrol", "nwg-look", "xdg-desktop-portal-wlr",
     
     # Temas, Protons e Ferramentas CachyOS/Arch
     "wl-clip-persist", "papirus-icon-theme", "adw-gtk-theme",
