@@ -59,6 +59,8 @@ OFFICIAL_PKGS=(
     mpv swayimg zathura file-roller rclone firefox obsidian pavucontrol nwg-look xdg-desktop-portal-gnome xdg-desktop-portal-gtk
     # Themes and tools
     wl-clip-persist papirus-icon-theme adw-gtk-theme protonup-qt prismlauncher spotify-launcher gnome-keyring seahorse rtkit niri
+    # System utilities & essentials
+    rsync wget openssh pv hwinfo micro meld fsarchiver
 )
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PKGS[@]}"
 
