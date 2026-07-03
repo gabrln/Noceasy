@@ -110,7 +110,90 @@ ln -sf "$REPO_DIR/.config/user-dirs.locale" "$HOME/.config/user-dirs.locale"
 # Make sure scripts are executable
 find "$REPO_DIR/.config/niri/scripts" -type f -name "*.sh" -exec chmod +x {} +
 
-# 7. Copy System Configurations (Requires sudo)
+# 7. Setup Neovim (LazyVim & Noctalia theme integration)
+echo -e "${BLUE}Setting up Neovim with LazyVim & Noctalia integration...${NC}"
+NVIM_DIR="$HOME/.config/nvim"
+
+if [ ! -d "$NVIM_DIR" ]; then
+    echo -e "${YELLOW}No Neovim configuration found. Installing LazyVim starter...${NC}"
+    git clone https://github.com/LazyVim/starter "$NVIM_DIR"
+    rm -rf "$NVIM_DIR/.git"
+fi
+
+# Ensure directories exist
+mkdir -p "$NVIM_DIR/lua/plugins"
+
+# Write Matugen template for Noctalia
+echo -e "${YELLOW}Writing Matugen template for Noctalia integration...${NC}"
+cat << 'EOF' > "$NVIM_DIR/lua/matugen-template.lua"
+local M = {}
+
+function M.setup()
+  require('base16-colorscheme').setup {
+    -- Background tones
+    base00 = '{{colors.surface.default.hex}}', -- Default Background
+    base01 = '{{colors.surface_container.default.hex}}', -- Lighter Background (status bars)
+    base02 = '{{colors.surface_container_high.default.hex}}', -- Selection Background
+    base03 = '{{colors.outline.default.hex}}', -- Comments, Invisibles
+    -- Foreground tones
+    base04 = '{{colors.on_surface_variant.default.hex}}', -- Dark Foreground (status bars)
+    base05 = '{{colors.on_surface.default.hex}}', -- Default Foreground
+    base06 = '{{colors.on_surface.default.hex}}', -- Light Foreground
+    base07 = '{{colors.on_background.default.hex}}', -- Lightest Foreground
+    -- Accent colors
+    base08 = '{{colors.error.default.hex}}', -- Variables, XML Tags, Errors
+    base09 = '{{colors.tertiary.default.hex}}', -- Integers, Constants
+    base0A = '{{colors.secondary.default.hex}}', -- Classes, Search Background
+    base0B = '{{colors.primary.default.hex}}', -- Strings, Diff Inserted
+    base0C = '{{colors.tertiary_fixed_dim.default.hex}}', -- Regex, Escape Chars
+    base0D = '{{colors.primary_fixed_dim.default.hex}}', -- Functions, Methods
+    base0E = '{{colors.secondary_fixed_dim.default.hex}}', -- Keywords, Storage
+    base0F = '{{colors.error_container.default.hex}}', -- Deprecated, Embedded Tags
+  }
+end
+
+-- Register a signal handler for SIGUSR1 (matugen updates)
+local signal = vim.uv.new_signal()
+signal:start(
+  'sigusr1',
+  vim.schedule_wrap(function()
+    package.loaded['matugen'] = nil
+    require('matugen').setup()
+  end)
+)
+
+return M
+EOF
+
+# Write LazyVim plugin definition for base16-nvim and Matugen setup
+if [ ! -f "$NVIM_DIR/lua/plugins/matugen.lua" ]; then
+    echo -e "${YELLOW}Writing LazyVim plugin file for Noctalia theme...${NC}"
+    cat << 'EOF' > "$NVIM_DIR/lua/plugins/matugen.lua"
+return {
+  -- Installs the base16-nvim colorscheme
+  {
+    "RRethy/base16-nvim",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      -- Load matugen if it exists, otherwise fall back gracefully
+      pcall(function()
+        require("matugen").setup()
+      end)
+    end,
+  },
+  -- Configure LazyVim to load the base16 colorscheme by default
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "base16-colorscheme",
+    },
+  },
+}
+EOF
+fi
+
+# 8. Copy System Configurations (Requires sudo)
 echo -e "${BLUE}Deploying system configuration files...${NC}"
 sudo mkdir -p /etc/greetd
 sudo cp "$REPO_DIR/.config/greetd/config.toml" /etc/greetd/config.toml
@@ -125,7 +208,7 @@ sudo cp "$REPO_DIR/.config/greetd/greeter.toml" /var/lib/noctalia-greeter/greete
 sudo chown greeter:greeter /var/lib/noctalia-greeter/greeter.toml
 sudo chmod 644 /var/lib/noctalia-greeter/greeter.toml
 
-# 8. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
+# 9. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
 echo -e "${BLUE}Linking user themes for root application accessibility...${NC}"
 sudo mkdir -p /root/.config
 sudo ln -sf "$HOME/.config/gtk-3.0" /root/.config/gtk-3.0
@@ -134,7 +217,7 @@ sudo ln -sf "$HOME/.config/qt6ct" /root/.config/qt6ct
 sudo mkdir -p /root/.local/share
 sudo ln -sf "$HOME/.local/share/icons" /root/.local/share/icons
 
-# 9. Enable Systemd Services
+# 10. Enable Systemd Services
 echo -e "${BLUE}Enabling Systemd units...${NC}"
 SERVICES=(
     docker.service
