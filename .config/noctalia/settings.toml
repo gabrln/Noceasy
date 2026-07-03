@@ -1,5 +1,6 @@
 [bar.default]
 center = [ "wallpaper", "clock", "clipboard" ]
+contact_shadow = true
 end = [
     "media",
     "tray",
@@ -12,11 +13,14 @@ end = [
     "control-center",
     "session"
 ]
-shadow = false
+margin_edge = 5
+radius = 14
+shadow = true
 start = [ "launcher", "workspaces" ]
 
 [dock]
-shadow = false
+active_monitor_only = true
+shadow = true
 
 [location]
 auto_locate = true
@@ -57,14 +61,18 @@ launch_apps_as_systemd_services = true
 polkit_agent = true
 telemetry_enabled = true
 
+    [shell.greeter_sync]
+    auto_sync = true
+
     [shell.launcher]
     categories = false
+    compact = true
 
     [shell.panel]
-    control_center_placement = "floating"
-    session_placement = "floating"
-    shadow = false
-    wallpaper_placement = "floating"
+    control_center_placement = "attached"
+    session_placement = "attached"
+    shadow = true
+    wallpaper_placement = "attached"
 
     [shell.screen_corners]
     enabled = true
@@ -74,10 +82,53 @@ telemetry_enabled = true
     directory = "/home/gabrln/Pictures/Screenshots"
     pipe_to_command = true
 
+    [[shell.session.actions]]
+    action = "lock"
+    countdown_seconds = 0.0
+    enabled = true
+    shortcut = "1"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "logout"
+    countdown_seconds = 0.0
+    enabled = true
+    shortcut = "2"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "lock_and_suspend"
+    countdown_seconds = 0.0
+    enabled = true
+    label = "Suspender"
+    shortcut = "3"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "reboot"
+    countdown_seconds = 0.0
+    enabled = true
+    shortcut = "4"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "shutdown"
+    countdown_seconds = 0.0
+    enabled = true
+    shortcut = "5"
+    variant = "destructive"
+
+[templates.nvim-base16]
+input_path = "~/.config/nvim/lua/matugen-template.lua"
+output_path = "~/.config/nvim/lua/matugen.lua"
+post_hook = "pkill -SIGUSR1 nvim"
+
 [theme]
-builtin = "Catppuccin"
+builtin = "Eldritch"
+community_palette = "GitHub Dark"
 mode = "dark"
-source = "builtin"
+source = "community"
+wallpaper_scheme = "m3-content"
 
     [theme.templates]
     builtin_ids = [ "btop", "gtk3", "gtk4", "kitty", "mango", "niri", "qt", "starship" ]
