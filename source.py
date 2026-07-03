@@ -90,9 +90,9 @@ decman.files[f"{user_home}/.zshenv"] = File(
     owner=sudo_user
 )
 
-# Noctalia Settings (Arquivo de Estado do Noctalia)
-decman.files[f"{user_home}/.local/state/noctalia/settings.toml"] = File(
-    source_file=f"{repo_dir}/.config/noctalia/settings.toml",
+# Noctalia Templates (Apenas templates estáticos, sem gerenciar o settings.toml mutável)
+decman.files[f"{user_home}/.config/noctalia/user-templates.toml"] = File(
+    source_file=f"{repo_dir}/.config/noctalia/user-templates.toml",
     owner=sudo_user
 )
 
@@ -116,7 +116,6 @@ configs = [
     "mango",
     "fastfetch",
     "nvim",
-    "noctalia",
     "opencode",
     "niri"
 ]
