@@ -19,7 +19,20 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
-# 1. Install/Update yay (AUR helper)
+# 1. Ensure git is installed and clone the repository if not present
+if ! command -v git &>/dev/null; then
+    echo -e "${YELLOW}Installing git...${NC}"
+    sudo pacman -S --needed --noconfirm git
+fi
+
+REPO_DIR="$HOME/projects/Arch-gabrln"
+if [ ! -d "$REPO_DIR" ]; then
+    echo -e "${YELLOW}Cloning repository to $REPO_DIR...${NC}"
+    mkdir -p "$HOME/projects"
+    git clone https://github.com/gabrln/Arch-gabrln.git "$REPO_DIR"
+fi
+
+# 2. Install/Update yay (AUR helper)
 if ! command -v yay &>/dev/null; then
     echo -e "${YELLOW}Installing 'yay' for AUR package support...${NC}"
     sudo pacman -S --needed --noconfirm base-devel git
@@ -28,7 +41,7 @@ if ! command -v yay &>/dev/null; then
     rm -rf /tmp/yay
 fi
 
-# 2. Install Pacman Packages (Official repositories)
+# 3. Install Pacman Packages (Official repositories)
 echo -e "${BLUE}Installing official Pacman packages...${NC}"
 OFFICIAL_PKGS=(
     # Base system
@@ -44,7 +57,7 @@ OFFICIAL_PKGS=(
 )
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PKGS[@]}"
 
-# 3. Install AUR Packages
+# 4. Install AUR Packages
 echo -e "${BLUE}Installing AUR packages...${NC}"
 AUR_PKGS=(
     noctalia-git
@@ -54,13 +67,13 @@ AUR_PKGS=(
 )
 yay -S --needed --noconfirm "${AUR_PKGS[@]}"
 
-# 4. Install Flatpak Packages
+# 5. Install Flatpak Packages
 if command -v flatpak &>/dev/null; then
     echo -e "${BLUE}Installing Flatpak packages...${NC}"
     flatpak install -y flathub com.github.wwmm.easyeffects
 fi
 
-# 5. Create Symlinks for User Configurations
+# 6. Create Symlinks for User Configurations
 echo -e "${BLUE}Setting up configuration symlinks...${NC}"
 REPO_DIR="$HOME/projects/Arch-gabrln"
 mkdir -p "$HOME/.config"
@@ -97,7 +110,7 @@ ln -sf "$REPO_DIR/.config/user-dirs.locale" "$HOME/.config/user-dirs.locale"
 # Make sure scripts are executable
 find "$REPO_DIR/.config/niri/scripts" -type f -name "*.sh" -exec chmod +x {} +
 
-# 6. Copy System Configurations (Requires sudo)
+# 7. Copy System Configurations (Requires sudo)
 echo -e "${BLUE}Deploying system configuration files...${NC}"
 sudo mkdir -p /etc/greetd
 sudo cp "$REPO_DIR/.config/greetd/config.toml" /etc/greetd/config.toml
@@ -112,7 +125,7 @@ sudo cp "$REPO_DIR/.config/greetd/greeter.toml" /var/lib/noctalia-greeter/greete
 sudo chown greeter:greeter /var/lib/noctalia-greeter/greeter.toml
 sudo chmod 644 /var/lib/noctalia-greeter/greeter.toml
 
-# 7. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
+# 8. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
 echo -e "${BLUE}Linking user themes for root application accessibility...${NC}"
 sudo mkdir -p /root/.config
 sudo ln -sf "$HOME/.config/gtk-3.0" /root/.config/gtk-3.0
@@ -121,7 +134,7 @@ sudo ln -sf "$HOME/.config/qt6ct" /root/.config/qt6ct
 sudo mkdir -p /root/.local/share
 sudo ln -sf "$HOME/.local/share/icons" /root/.local/share/icons
 
-# 8. Enable Systemd Services
+# 9. Enable Systemd Services
 echo -e "${BLUE}Enabling Systemd units...${NC}"
 SERVICES=(
     docker.service
