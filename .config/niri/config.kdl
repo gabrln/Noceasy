@@ -180,7 +180,7 @@ binds {
     Mod+H { spawn "kitty" "--class" "keyhints-scratch" "-e" "/home/gabrln/.config/niri/scripts/KeyHints.sh"; }
     
     // Window Info Script
-    Mod+Shift+D { spawn "/home/gabrln/.config/mango/scripts/WindowInfo.sh"; }
+    Mod+Shift+D { spawn "/home/gabrln/.config/niri/scripts/WindowInfo.sh"; }
     
     // Hardware and media controls
     XF86AudioRaiseVolume { spawn "noctalia" "msg" "volume-up"; }

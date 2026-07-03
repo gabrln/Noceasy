@@ -28,6 +28,18 @@ known_hosts
 .config/rofi/
 .config/noctalia/
 
+# ===== Kitty generated =====
+.config/kitty/current-theme.conf
+.config/kitty/themes/
+
+# ===== Mango generated =====
+.config/mango/noctalia.conf
+
+# ===== OpenCode generated =====
+.config/opencode/node_modules/
+.config/opencode/package.json
+.config/opencode/package-lock.json
+
 # ===== Zsh modular configuration =====
 .config/zsh/plugins/
 .config/zsh/.zcompdump*
