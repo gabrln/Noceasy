@@ -53,8 +53,8 @@ fi
 # 3. Install Pacman Packages (Official repositories)
 print_step "Installing official Pacman packages..."
 OFFICIAL_PKGS=(
-    # Base system
-    base base-devel linux-cachyos linux-cachyos-headers git git-delta docker flatpak brightnessctl zsh snapper just
+    # Base system & build tools for plugins (hyprpm)
+    base base-devel linux-cachyos linux-cachyos-headers cmake cpio pkgconf git git-delta docker flatpak brightnessctl zsh snapper just
     # Zsh and terminal tooling
     atuin bat eza fzf ripgrep fd zoxide starship direnv fastfetch btop grim slurp
     # User applications
@@ -185,7 +185,7 @@ SERVICES=(
     qemu-guest-agent.service
 )
 for svc in "${SERVICES[@]}"; do
-    sudo systemctl enable "$svc"
+    sudo systemctl enable "$svc" 2>/dev/null || true
 done
 
 echo -e "${GREEN}=== Setup Installation & Sync Completed successfully! ===${NC}"
