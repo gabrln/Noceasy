@@ -30,6 +30,11 @@ known_hosts
 .config/kitty/current-theme.conf
 .config/kitty/themes/
 
+# ===== Neovim generated =====
+.config/nvim/lua/matugen.lua
+.config/nvim/lazy-lock.json
+.config/nvim/lazyvim.json
+
 # ===== Noctalia generated =====
 .config/starship.toml
 .config/qt6ct/
