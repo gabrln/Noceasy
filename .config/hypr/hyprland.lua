@@ -2,6 +2,20 @@
 -- Hyprland Lua Configuration (v0.55+)
 -- Custom Scrolling Layout Setup matching Niri workflows
 -- =========================================================================
+-- Monitor settings (Matching scale 1.0 from Niri)
+hl.monitor({
+    output   = "eDP-1",
+    mode     = "preferred",
+    position = "auto",
+    scale    = 1,
+})
+
+hl.monitor({
+    output   = "",
+    mode     = "preferred",
+    position = "auto",
+    scale    = "auto",
+})
 
 hl.config({
     general = {
