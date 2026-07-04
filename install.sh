@@ -77,7 +77,7 @@ OFFICIAL_PKGS=(
     # User applications
     neovim kitty zellij yazi nautilus vesktop cliphist wl-clipboard duf gping tealdeer procs cava
     # Media and files
-    mpv swayimg zathura file-roller rclone firefox obsidian pavucontrol nwg-look xdg-desktop-portal-gnome xdg-desktop-portal-gtk
+    mpv swayimg zathura file-roller rclone firefox obsidian pavucontrol nwg-look xdg-user-dirs xdg-user-dirs-gtk xdg-desktop-portal-gnome xdg-desktop-portal-gtk
     # Themes and tools
     wl-clip-persist papirus-icon-theme adw-gtk-theme protonup-qt prismlauncher spotify-launcher gnome-keyring seahorse rtkit niri hyprland uwsm xdg-desktop-portal-hyprland
     # System utilities & essentials
@@ -173,6 +173,10 @@ run_as_user "ln -sf '$REPO_DIR/.config/mimeapps.list' '$USER_HOME/.config/mimeap
 run_as_user "ln -sf '$REPO_DIR/.config/user-dirs.dirs' '$USER_HOME/.config/user-dirs.dirs'"
 run_as_user "ln -sf '$REPO_DIR/.config/user-dirs.locale' '$USER_HOME/.config/user-dirs.locale'"
 run_as_user "ln -sf '$REPO_DIR/.config/starship.toml' '$USER_HOME/.config/starship.toml'"
+
+# Criar diretórios padrão do usuário (XDG user-dirs) e sincronizar
+run_as_user "mkdir -p '$USER_HOME/Desktop' '$USER_HOME/Downloads' '$USER_HOME/Templates' '$USER_HOME/Public' '$USER_HOME/Documents' '$USER_HOME/Music' '$USER_HOME/Pictures/Screenshots' '$USER_HOME/Pictures/Wallpapers' '$USER_HOME/Videos' '$USER_HOME/Projects' '$USER_HOME/projects'"
+run_as_user "xdg-user-dirs-update 2>/dev/null || true"
 
 # Tornar scripts executáveis
 find "$REPO_DIR/.config" -type f \( -name "*.sh" -o -path "*/scripts/*" \) -exec chmod +x {} + 2>/dev/null || true
