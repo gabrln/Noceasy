@@ -136,7 +136,20 @@ find "$REPO_DIR/.config" -type f \( -name "*.sh" -o -path "*/scripts/*" \) -exec
 # The symlink created in step 6 is sufficient — no extra cloning needed.
 print_step "Neovim config already handled by symlink (LazyVim). Skipping extra setup..."
 
-# 8. Copy System Configurations (Requires sudo)
+# 8. Setup Hyprland Plugins (scrolloverview via hyprpm)
+if command -v hyprpm &>/dev/null; then
+    print_step "Setting up Hyprland plugins (scrolloverview)..."
+    if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]; then
+        hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git 2>/dev/null || true
+        hyprpm update 2>/dev/null || true
+        hyprpm enable scrolloverview 2>/dev/null || true
+    else
+        echo -e "${YELLOW}Hyprland is not currently running. To enable the scrolloverview plugin later, run:${NC}"
+        echo -e "${YELLOW}  hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git && hyprpm update && hyprpm enable scrolloverview${NC}"
+    fi
+fi
+
+# 9. Copy System Configurations (Requires sudo)
 print_step "Deploying system configuration files..."
 sudo mkdir -p /etc/greetd
 sudo cp "$REPO_DIR/.config/greetd/config.toml" /etc/greetd/config.toml
@@ -152,7 +165,7 @@ sudo cp "$REPO_DIR/.config/greetd/greeter.toml" /var/lib/noctalia-greeter/greete
 sudo chown greeter:greeter /var/lib/noctalia-greeter/greeter.toml
 sudo chmod 644 /var/lib/noctalia-greeter/greeter.toml
 
-# 9. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
+# 10. Symlink themes for Root user (GParted, btrfs-assistant, Greetd Greeter compatibility)
 print_step "Linking user themes for root application accessibility..."
 mkdir -p "$HOME/.config/qt6ct" "$HOME/.local/share/icons"
 sudo mkdir -p /root/.config /root/.local/share
@@ -161,7 +174,7 @@ sudo ln -sfT "$HOME/.config/gtk-4.0" /root/.config/gtk-4.0
 sudo ln -sfT "$HOME/.config/qt6ct" /root/.config/qt6ct
 sudo ln -sfT "$HOME/.local/share/icons" /root/.local/share/icons
 
-# 10. Enable Systemd Services
+# 11. Enable Systemd Services
 print_step "Enabling Systemd units..."
 SERVICES=(
     docker.service
