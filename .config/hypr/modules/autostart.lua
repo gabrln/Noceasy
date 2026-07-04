@@ -3,6 +3,9 @@
 -- =========================================================================
 
 hl.on("hyprland.start", function()
+    -- Hyprland Plugins reload (carrega scrolloverview no boot)
+    hl.exec_cmd("hyprpm reload -n")
+
     -- Authentication & Keyring services (inspired by minimaLinux)
     hl.exec_cmd("/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 || /usr/libexec/polkit-gnome-authentication-agent-1")
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
