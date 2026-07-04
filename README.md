@@ -69,6 +69,8 @@ Os utilitários em ~/.config/hypr/scripts/ operam como binários independentes:
 | Super + D | Launcher de Aplicativos (Noctalia) |
 | Super + / | Cheat Sheet interativo de atalhos |
 | Super + G | Criar/Alternar Grupo de Janelas (Modo Abas) |
+| Super + Alt + H / L | Alternar entre Abas do Grupo Anterior/Próximo |
+| Super + . / , | Mover Coluna de Rolagem Direita/Esquerda |
 | Super + Alt + Space | Fixar Janela Flutuante em Todas Workspaces (Pin) |
 | Super + Shift + W | Alternar Tema Claro/Escuro (Noctalia) |
 | Super + Q | Fechar Janela |
