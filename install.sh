@@ -63,7 +63,7 @@ if ! command -v shelly &>/dev/null; then
     echo -e "${YELLOW}Instalando 'shelly' para gerenciamento de pacotes...${NC}"
     pacman -S --needed --noconfirm base-devel git
     if ! pacman -S --needed --noconfirm shelly 2>/dev/null; then
-        run_as_user "git clone https://aur.archlinux.org/shelly-bin.git /tmp/shelly-bin && cd /tmp/shelly-bin && makepkg -si --noconfirm && rm -rf /tmp/shelly-bin"
+        run_as_user "rm -rf /tmp/shelly-bin && git clone https://aur.archlinux.org/shelly-bin.git /tmp/shelly-bin && cd /tmp/shelly-bin && makepkg -si --noconfirm && rm -rf /tmp/shelly-bin"
     fi
 fi
 
@@ -158,9 +158,9 @@ CONFIGS=(
 
 for cfg in "${CONFIGS[@]}"; do
     TARGET_PATH="$USER_HOME/.config/$cfg"
-    if [ -d "$TARGET_PATH" ] && [ ! -L "$TARGET_PATH" ]; then
+    if [ -e "$TARGET_PATH" ] && [ ! -L "$TARGET_PATH" ]; then
         BACKUP_PATH="${TARGET_PATH}.backup.$(date +%Y%m%d_%H%M%S)"
-        echo -e "${YELLOW}Fazer backup de diretório existente: $cfg -> $(basename "$BACKUP_PATH")${NC}"
+        echo -e "${YELLOW}Fazer backup de configuração existente: $cfg -> $(basename "$BACKUP_PATH")${NC}"
         mv "$TARGET_PATH" "$BACKUP_PATH"
         chown -R "$REAL_USER:$REAL_USER" "$BACKUP_PATH"
     fi
@@ -204,16 +204,18 @@ cp "$REPO_DIR/.config/niri/niri.desktop" /usr/share/wayland-sessions/niri.deskto
 
 mkdir -p /var/lib/noctalia-greeter
 cp "$REPO_DIR/.config/greetd/greeter.toml" /var/lib/noctalia-greeter/greeter.toml
-chown greeter:greeter /var/lib/noctalia-greeter/greeter.toml
+chown -R greeter:greeter /var/lib/noctalia-greeter 2>/dev/null || true
 chmod 644 /var/lib/noctalia-greeter/greeter.toml
 
 # 10. Symlinks de temas para o usuário root (compatibilidade com apps gráficos sudo)
 print_step "Vinculando temas para acessibilidade de aplicativos root..."
 run_as_user "mkdir -p '$USER_HOME/.config/qt6ct' '$USER_HOME/.local/share/icons'"
 mkdir -p /root/.config /root/.local/share
-ln -sfT "$USER_HOME/.config/gtk-3.0" /root/.config/gtk-3.0
-ln -sfT "$USER_HOME/.config/gtk-4.0" /root/.config/gtk-4.0
-ln -sfT "$USER_HOME/.config/qt6ct" /root/.config/qt6ct
+for root_cfg in gtk-3.0 gtk-4.0 qt6ct; do
+    rm -rf "/root/.config/$root_cfg"
+    ln -sfT "$USER_HOME/.config/$root_cfg" "/root/.config/$root_cfg"
+done
+rm -rf /root/.local/share/icons
 ln -sfT "$USER_HOME/.local/share/icons" /root/.local/share/icons
 
 # 11. Ativar serviços do Systemd
