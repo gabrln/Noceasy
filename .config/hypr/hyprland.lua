@@ -96,20 +96,20 @@ local mod = "SUPER"
 
 -- Core operations
 hl.bind(mod .. " + Q", hl.dsp.exec_cmd("kitty"))
-hl.bind(mod .. " + SHIFT + Q", function() hl.dispatch("killactive", "") end)
-hl.bind("CTRL + ALT + Delete", function() hl.dispatch("exit", "") end)
+hl.bind(mod .. " + SHIFT + Q", hl.dsp.window.close())
+hl.bind("CTRL + ALT + Delete", hl.dsp.exit())
 
 -- Focus movement (Vim keys)
-hl.bind(mod .. " + H", function() hl.dispatch("movefocus", "l") end)
-hl.bind(mod .. " + L", function() hl.dispatch("movefocus", "r") end)
-hl.bind(mod .. " + K", function() hl.dispatch("movefocus", "u") end)
-hl.bind(mod .. " + J", function() hl.dispatch("movefocus", "d") end)
+hl.bind(mod .. " + H", hl.dsp.focus({ direction = "left" }))
+hl.bind(mod .. " + L", hl.dsp.focus({ direction = "right" }))
+hl.bind(mod .. " + K", hl.dsp.focus({ direction = "up" }))
+hl.bind(mod .. " + J", hl.dsp.focus({ direction = "down" }))
 
 -- Move windows (Vim keys)
-hl.bind(mod .. " + SHIFT + H", function() hl.dispatch("movewindow", "l") end)
-hl.bind(mod .. " + SHIFT + L", function() hl.dispatch("movewindow", "r") end)
-hl.bind(mod .. " + SHIFT + K", function() hl.dispatch("movewindow", "u") end)
-hl.bind(mod .. " + SHIFT + J", function() hl.dispatch("movewindow", "d") end)
+hl.bind(mod .. " + SHIFT + H", hl.dsp.window.move({ direction = "left" }))
+hl.bind(mod .. " + SHIFT + L", hl.dsp.window.move({ direction = "right" }))
+hl.bind(mod .. " + SHIFT + K", hl.dsp.window.move({ direction = "up" }))
+hl.bind(mod .. " + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
 
 -- Scrolling layout specific binds
 hl.bind(mod .. " + period", hl.dsp.layout("move +col"))
@@ -119,14 +119,14 @@ hl.bind(mod .. " + SHIFT + comma", hl.dsp.layout("swapcol l"))
 
 -- Workspaces switching and window moving (1 to 9)
 for i = 1, 9 do
-    hl.bind(mod .. " + " .. i, function() hl.dispatch("workspace", tostring(i)) end)
-    hl.bind(mod .. " + SHIFT + " .. i, function() hl.dispatch("movetoworkspace", tostring(i)) end)
+    hl.bind(mod .. " + " .. i, hl.dsp.focus({ workspace = i }))
+    hl.bind(mod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
 end
 
 -- Scratchpads (Toggle Special Workspaces)
-hl.bind(mod .. " + SHIFT + Return", function() hl.dispatch("togglespecialworkspace", "kitty-drop") end)
-hl.bind(mod .. " + F1", function() hl.dispatch("togglespecialworkspace", "btop-scratch") end)
-hl.bind(mod .. " + Slash", function() hl.dispatch("togglespecialworkspace", "keyhints-scratch") end)
+hl.bind(mod .. " + SHIFT + Return", hl.dsp.workspace.toggle_special("kitty-drop"))
+hl.bind(mod .. " + F1", hl.dsp.workspace.toggle_special("btop-scratch"))
+hl.bind(mod .. " + Slash", hl.dsp.workspace.toggle_special("keyhints-scratch"))
 
 -- Media and controls mapped through Noctalia / system tools
 hl.bind(mod .. " + F2", hl.dsp.exec_cmd("noctalia msg mic-mute"))
