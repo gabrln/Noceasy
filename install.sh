@@ -140,12 +140,12 @@ print_step "Neovim config already handled by symlink (LazyVim). Skipping extra s
 if command -v hyprpm &>/dev/null; then
     print_step "Setting up Hyprland plugins (scrolloverview)..."
     if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]; then
-        hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git 2>/dev/null || true
         hyprpm update 2>/dev/null || true
+        hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git 2>/dev/null || true
         hyprpm enable scrolloverview 2>/dev/null || true
     else
         echo -e "${YELLOW}Hyprland is not currently running. To enable the scrolloverview plugin later, run:${NC}"
-        echo -e "${YELLOW}  hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git && hyprpm update && hyprpm enable scrolloverview${NC}"
+        echo -e "${YELLOW}  hyprpm update && hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git && hyprpm enable scrolloverview${NC}"
     fi
 fi
 
