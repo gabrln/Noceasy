@@ -125,11 +125,6 @@ window-rule {
     open-maximized true
 }
 
-// Open Antigravity in fullscreen by default
-window-rule {
-    match app-id=r#"antigravity"#
-    open-fullscreen true
-}
 
 // Window rules for Noctalia settings panel
 window-rule {
