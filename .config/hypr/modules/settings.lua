@@ -73,7 +73,6 @@ hl.config({
             scale = 0.5,
             workspace_gap = 100,
             layout = "vertical",
-            reverse_scroll = true,
             wallpaper = 0,
             blur = false,
         },
