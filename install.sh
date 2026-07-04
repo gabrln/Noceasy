@@ -129,7 +129,7 @@ ln -sf "$REPO_DIR/.config/user-dirs.locale" "$HOME/.config/user-dirs.locale"
 ln -sf "$REPO_DIR/.config/starship.toml" "$HOME/.config/starship.toml"
 
 # Make sure scripts are executable
-find "$REPO_DIR/.config" -type f \( -name "*.sh" -o -name "*.lua" \) -exec chmod +x {} + 2>/dev/null || true
+find "$REPO_DIR/.config" -type f \( -name "*.sh" -o -path "*/scripts/*" \) -exec chmod +x {} + 2>/dev/null || true
 
 # 7. Setup Neovim (LazyVim + Noctalia theme integration)
 # The full LazyVim config is already tracked in the repo under .config/nvim.

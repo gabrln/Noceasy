@@ -24,9 +24,10 @@ id_ed25519
 known_hosts
 
 # ===== configurações locais ignoradas =====
-.config/nvim/
 .config/rofi/
-.config/noctalia/
+
+# ===== Neovim generated =====
+.config/nvim/lua/matugen.lua
 
 # ===== Kitty generated =====
 .config/kitty/current-theme.conf
