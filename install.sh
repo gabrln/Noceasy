@@ -83,11 +83,11 @@ OFFICIAL_PKGS=(
     # System utilities & essentials
     rsync wget openssh pv hwinfo meld fsarchiver nano python-defusedxml python-packaging spice-vdagent qemu-guest-agent lua luajit libnotify jq
 )
-pacman -S --needed --noconfirm "${OFFICIAL_PKGS[@]}"
+shelly install -n "${OFFICIAL_PKGS[@]}"
 hash -r
 
 # 4. Instalar pacotes extras/AUR via shelly
-print_step "Instalando pacotes AUR e extras via shelly..."
+print_step "Instalando pacotes AUR via shelly aur install..."
 AUR_PKGS=(
     noctalia-git
     noctalia-greeter-git
@@ -95,13 +95,13 @@ AUR_PKGS=(
     niri-scratchpad-rs-git
     antigravity
 )
-run_as_user "shelly install --no-confirm ${AUR_PKGS[*]}"
+run_as_user "shelly aur install -n ${AUR_PKGS[*]}"
 
-# 5. Instalar pacotes Flatpak
+# 5. Instalar pacotes Flatpak via shelly
 if command -v flatpak &>/dev/null; then
-    print_step "Instalando pacotes Flatpak..."
+    print_step "Instalando pacotes Flatpak via shelly flatpak install..."
     flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    flatpak install -y --system flathub com.github.wwmm.easyeffects
+    shelly flatpak install -n com.github.wwmm.easyeffects || flatpak install -y --system flathub com.github.wwmm.easyeffects
 fi
 
 # 6. Instalar agentes de AI e ferramentas de desenvolvimento
