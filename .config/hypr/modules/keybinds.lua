@@ -97,10 +97,10 @@ end
 hl.bind(mod .. " + Tab",               toggle_overview)
 hl.bind(mod .. " + SHIFT + Tab",       hl.dsp.focus({ workspace = "e-1" }))
 hl.bind("ALT + Tab",                   toggle_overview)
-hl.bind(mod .. " + mouse_down",        hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mod .. " + mouse_up",          hl.dsp.focus({ workspace = "e-1" }))
-hl.bind(mod .. " + SHIFT + mouse_down", hl.dsp.window.move({ workspace = "e+1" }))
-hl.bind(mod .. " + SHIFT + mouse_up",   hl.dsp.window.move({ workspace = "e-1" }))
+hl.bind(mod .. " + mouse_down",        hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(mod .. " + mouse_up",          hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mod .. " + SHIFT + mouse_down", hl.dsp.window.move({ workspace = "e-1" }))
+hl.bind(mod .. " + SHIFT + mouse_up",   hl.dsp.window.move({ workspace = "e+1" }))
 
 -- Submap opcional para navegação avançada no scrolloverview
 if hl.define_submap then

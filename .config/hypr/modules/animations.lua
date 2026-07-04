@@ -19,7 +19,7 @@ hl.animation({ leaf = "windowsOut",       enabled = true, speed = 3,  bezier = "
 hl.animation({ leaf = "windowsMove",      enabled = true, speed = 5,  bezier = "wind",      style = "slide" })
 hl.animation({ leaf = "border",           enabled = true, speed = 1,  bezier = "liner" })
 hl.animation({ leaf = "fade",             enabled = true, speed = 3,  bezier = "smoothOut" })
-hl.animation({ leaf = "workspaces",       enabled = true, speed = 5,  bezier = "overshot",  style = "slide" })
+hl.animation({ leaf = "workspaces",       enabled = true, speed = 5,  bezier = "overshot",  style = "slidevert" })
 
 -- Scratchpads: subtle vertical slide-fade
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3,  bezier = "wind",      style = "slidefadevert 15%" })
