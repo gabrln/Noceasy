@@ -43,15 +43,9 @@ hl.window_rule({
 
 -- Regras de camada: desfoque (blur) e remoção de animações conflitantes
 hl.layer_rule({
-    match = { namespace = "^noctalia-(bar-.+|notification|dock|osd|wallpaper|background)$" },
+    match = { namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|wallpaper|background)$" },
     no_anim = true,
     ignore_alpha = 0.5,
-    blur = true,
-    blur_popups = true,
-})
-hl.layer_rule({
-    match = { namespace = "^noctalia-(panel|attached-panel)$" },
-    no_anim = true,
     blur = true,
     blur_popups = true,
 })
