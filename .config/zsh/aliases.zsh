@@ -34,7 +34,7 @@ alias search="yay -Ss"
 alias make="make -j\$(nproc)"
 alias ninja="ninja -j\$(nproc)"
 
-alias conf-niri="nvim ~/.config/niri/config.kdl"
+alias conf-hypr="nvim ~/.config/hypr/hyprland.lua"
 alias conf-zsh="nvim ~/.config/zsh/.zshrc"
 alias conf-kitty="nvim ~/.config/kitty/kitty.conf"
 alias install-setup="~/projects/Arch-gabrln/install.sh"

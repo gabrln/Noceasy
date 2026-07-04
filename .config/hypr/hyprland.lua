@@ -17,6 +17,14 @@ hl.monitor({
     scale    = "auto",
 })
 
+-- Persistent workspaces
+for i = 1, 10 do
+    hl.workspace_rule({
+        workspace = tostring(i),
+        persistent = true,
+    })
+end
+
 -- Core options
 hl.config({
     general = {
@@ -49,94 +57,148 @@ hl.config({
         follow_mouse = 1,
         accel_profile = "flat",
         sensitivity = -0.4,
+        repeat_rate  = 50,   -- key repeat rate (default ~25/s)
+        repeat_delay = 300,  -- delay before repeat starts (default ~600ms)
         touchpad = {
             tap_to_click = true,
             disable_while_typing = true,
+            natural_scroll = true,
+            drag_lock = false,
         },
     },
+    cursor = {
+        -- Hide cursor after 3 seconds of inactivity or while typing
+        inactive_timeout = 3,
+        hide_on_key_press = true,
+        sync_gsettings_theme = true,
+        warp_on_change_workspace = 2,
+    },
     misc = {
-        disable_hyprland_logo = true,
-    }
+        disable_hyprland_logo      = true,
+        focus_on_activate          = true,
+        middle_click_paste         = false,  -- disable accidental middle-click paste
+        allow_session_lock_restore = true,   -- prevent lockscreen crash on resume from suspend
+        enable_anr_dialog          = true,   -- show dialog when app is not responding
+        anr_missed_pings           = 15,     -- higher threshold (default 1 is too aggressive)
+        on_focus_under_fullscreen  = 1,      -- new window takes focus over fullscreen
+    },
+    binds = {
+        workspace_back_and_forth = true,  -- SUPER+N twice returns to previous workspace
+        allow_workspace_cycles   = true,  -- workspace 10 -> next wraps to workspace 1
+    },
+    xwayland = {
+        enabled            = true,
+        force_zero_scaling = true,  -- prevent pixelated X11 apps on HiDPI
+    },
 })
 
--- Window rules for Scratchpads (Special Workspaces)
-hl.window_rule({
-    match = { class = "kitty-drop" },
-    workspace = "special:kitty-drop",
-    float = true,
-    size = "1600 900"
-})
+-- Animations (using correct hl.curve/hl.animation API for v0.55+)
+hl.config({ animations = { enabled = true } })
 
-hl.window_rule({
-    match = { class = "btop-scratch" },
-    workspace = "special:btop-scratch",
-    float = true,
-    size = "1400 800"
-})
+-- Minimalist bezier curves
+hl.curve("wind",   { type = "bezier", points = { { 0.05, 0.9 }, { 0.1, 1.00 } } })
+hl.curve("winIn",  { type = "bezier", points = { { 0.1,  1.0 }, { 0.1, 1.00 } } })
+hl.curve("winOut", { type = "bezier", points = { { 0.3,  0.0 }, { 0,   1.0  } } })
+hl.curve("liner",  { type = "bezier", points = { { 1,    1   }, { 1,   1    } } })
 
-hl.window_rule({
-    match = { class = "keyhints-scratch" },
-    workspace = "special:keyhints-scratch",
-    float = true,
-    size = "1280 720"
-})
+-- Window animations
+hl.animation({ leaf = "windowsIn",        enabled = true, speed = 5,  bezier = "winIn",  style = "slide" })
+hl.animation({ leaf = "windowsOut",       enabled = true, speed = 3,  bezier = "winOut", style = "slide" })
+hl.animation({ leaf = "windowsMove",      enabled = true, speed = 5,  bezier = "wind",   style = "slide" })
+hl.animation({ leaf = "border",           enabled = true, speed = 1,  bezier = "liner" })
+hl.animation({ leaf = "fade",             enabled = true, speed = 5,  bezier = "wind" })
+hl.animation({ leaf = "workspaces",       enabled = true, speed = 5,  bezier = "wind",   style = "slide" })
+-- Scratchpads: subtle vertical slide-fade
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3,  bezier = "wind",   style = "slidefadevert 15%" })
+-- Layer animations (bars, overlays, panels)
+hl.animation({ leaf = "layersIn",         enabled = true, speed = 3,  bezier = "winIn",  style = "slide" })
+hl.animation({ leaf = "layersOut",        enabled = true, speed = 2,  bezier = "winOut" })
+
+-- Scratchpads (special workspaces) – tamanho, posição e foco
+hl.window_rule({ match = { class = "kitty-drop" },     float = true, size = "1600 900", center = true, stay_focused = true, workspace = "special:kitty-drop" })
+hl.window_rule({ match = { class = "btop-scratch" },   float = true, size = "1600 900", center = true, stay_focused = true, workspace = "special:btop-scratch" })
+hl.window_rule({ match = { class = "keyhints-scratch" }, float = true, size = "1600 900", center = true, stay_focused = true, workspace = "special:keyhints-scratch" })
 
 -- Window rules for Noctalia settings panel
+-- Force a larger size in absolute pixels (1920x1080 monitor: ~90% = 1728x972)
 hl.window_rule({
     match = { class = "dev.noctalia.Noctalia.Settings" },
     float = true,
-    size = "1080 920"
+    size = "1400 800",
+    center = true,
 })
 
 -- General window rules (CSD, floating dialogs, browser maximize)
 hl.window_rule({
     match = { class = "firefox" },
-    maximize = true
+    maximize = true,
 })
 hl.window_rule({
     match = { class = "google-chrome" },
-    maximize = true
+    maximize = true,
 })
 hl.window_rule({
     match = { class = "code" },
-    maximize = true
+    maximize = true,
 })
 hl.window_rule({
     match = { class = "obsidian" },
-    maximize = true
+    maximize = true,
 })
 
 -- Floating dialogs
 hl.window_rule({
     match = { title = ".*(Open|Save|Select).*" },
-    float = true
+    float = true,
 })
 hl.window_rule({
     match = { title = ".*File.*" },
-    float = true
+    float = true,
 })
 hl.window_rule({
     match = { class = "org.gtk.FileChooserDialog" },
-    float = true
+    float = true,
 })
 hl.window_rule({
     match = { title = ".*(Dialog|Properties|Preferences|Settings|Rename|Authentication).*" },
-    float = true
+    float = true,
 })
 hl.window_rule({
     match = { class = "zenity" },
-    float = true
+    float = true,
 })
 hl.window_rule({
     match = { class = "pavucontrol" },
-    float = true
+    float = true,
 })
 
--- Firefox Picture-in-Picture float
+-- Firefox Picture-in-Picture: pinned, semi-transparent, 30% of screen
 hl.window_rule({
-    match = { class = "firefox", title = "^Picture-in-Picture$" },
-    float = true
+    match            = { class = "firefox", title = "^Picture-in-Picture$" },
+    float            = true,
+    pin              = true,
+    keep_aspect_ratio = true,
+    size             = "(monitor_w*0.3) (monitor_h*0.3)",
+    move             = "72% 7%",
+    opacity          = "0.95 0.75",
 })
+
+-- Layer rules: blur on Noctalia overlays and notification layers
+hl.layer_rule({ match = { namespace = "notifications" },               blur = true })
+hl.layer_rule({ match = { namespace = "logout_dialog" },               blur = true })
+hl.layer_rule({ match = { namespace = "swaync-notification-window" },  blur = true })
+
+-- Helper function to toggle scratchpad, spawning if not running
+local function toggle_scratchpad(name, cmd)
+    local windows = hl.get_windows({ class = name })
+    if #windows == 0 then
+        hl.exec_cmd(cmd)
+        hl.exec_cmd("sleep 0.3")
+    end
+    hl.exec_cmd("hyprctl dispatch togglespecialworkspace " .. name)
+    hl.exec_cmd("sleep 0.05")
+    hl.exec_cmd("hyprctl dispatch focuswindow class:" .. name)
+end
 
 -- Keybindings
 local mod = "SUPER"
@@ -146,8 +208,8 @@ hl.bind(mod .. " + Return", hl.dsp.exec_cmd("kitty"))
 hl.bind(mod .. " + B", hl.dsp.exec_cmd("firefox"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd("kitty -e yazi"))
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exec_cmd("nautilus"))
-hl.bind(mod .. " + SHIFT + D", hl.dsp.exec_cmd("/home/gabrln/.config/niri/scripts/WindowInfo.sh"))
-hl.bind("ALT + F4", hl.dsp.exec_cmd("/home/gabrln/.config/niri/scripts/AltF4.sh"))
+hl.bind(mod .. " + SHIFT + D", hl.dsp.exec_cmd("/home/gabrln/.config/hypr/scripts/WindowInfo.lua"))
+hl.bind("ALT + F4", hl.dsp.exec_cmd("/home/gabrln/.config/hypr/scripts/AltF4.lua"))
 
 -- Noctalia controls
 hl.bind(mod .. " + D", hl.dsp.exec_cmd("noctalia msg panel-toggle launcher"))
@@ -162,6 +224,7 @@ hl.bind(mod .. " + W", hl.dsp.exec_cmd("noctalia msg wallpaper-random"))
 hl.bind(mod .. " + SHIFT + T", hl.dsp.exec_cmd("noctalia msg theme-mode-toggle"))
 
 -- Sessions & System
+hl.bind(mod .. " + Q", hl.dsp.window.close())
 hl.bind(mod .. " + SHIFT + Q", hl.dsp.window.close())
 hl.bind("CTRL + ALT + Delete", hl.dsp.exit())
 hl.bind("CTRL + ALT + L", hl.dsp.exec_cmd("noctalia msg session lock"))
@@ -185,6 +248,7 @@ hl.bind(mod .. " + C", hl.dsp.window.center())
 hl.bind(mod .. " + Space", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + R", hl.dsp.layout("colresize"))
 
+-- Window resizing (Ctrl+Alt + arrows)
 hl.bind("CTRL + ALT + Left", hl.dsp.window.resize({ x = -100, y = 0, relative = true }))
 hl.bind("CTRL + ALT + Right", hl.dsp.window.resize({ x = 100, y = 0, relative = true }))
 hl.bind("CTRL + ALT + Up", hl.dsp.window.resize({ x = 0, y = -100, relative = true }))
@@ -209,7 +273,7 @@ hl.bind(mod .. " + Tab", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mod .. " + SHIFT + Tab", hl.dsp.focus({ workspace = "e-1" }))
 
 -- Overview mode toggle
-hl.bind("ALT + Tab", function() hl.dispatch("toggleoverview", "") end)
+hl.bind("ALT + Tab", hl.dsp.exec_raw("toggleoverview", ""))
 
 -- Mouse wheel workspace switching
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
@@ -217,10 +281,14 @@ hl.bind(mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 hl.bind(mod .. " + SHIFT + mouse_down", hl.dsp.window.move({ workspace = "e+1" }))
 hl.bind(mod .. " + SHIFT + mouse_up", hl.dsp.window.move({ workspace = "e-1" }))
 
--- Scratchpads (Toggle Special Workspaces)
-hl.bind(mod .. " + SHIFT + Return", hl.dsp.workspace.toggle_special("kitty-drop"))
-hl.bind(mod .. " + F1", hl.dsp.workspace.toggle_special("btop-scratch"))
-hl.bind(mod .. " + Slash", hl.dsp.workspace.toggle_special("keyhints-scratch"))
+-- Mouse drag window controls
+hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
+hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+-- Scratchpads (Toggle Special Workspaces with dynamic spawning)
+hl.bind(mod .. " + SHIFT + Return", function() toggle_scratchpad("kitty-drop", "kitty --class kitty-drop") end)
+hl.bind(mod .. " + F1", function() toggle_scratchpad("btop-scratch", "kitty --class btop-scratch -e btop") end)
+hl.bind(mod .. " + Slash", function() toggle_scratchpad("keyhints-scratch", "kitty --class keyhints-scratch -e /home/gabrln/.config/hypr/scripts/KeyHints.lua") end)
 
 -- Hardware, media, volume
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("noctalia msg volume-up"), { locked = true, repeating = true })
@@ -257,9 +325,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-clip-persist --clipboard regular --reconnect-tries 0")
     hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd("flatpak run com.github.wwmm.easyeffects --gapplication-service")
-
-    -- Pre-spawn scratchpad processes inside their special workspaces
-    hl.exec_cmd("kitty --class kitty-drop")
-    hl.exec_cmd("kitty --class btop-scratch -e btop")
-    hl.exec_cmd("kitty --class keyhints-scratch -e /home/gabrln/.config/niri/scripts/KeyHints.sh")
 end)
+
+-- For Noctalia Color templates
+require("noctalia").apply_theme()

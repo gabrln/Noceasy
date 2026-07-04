@@ -131,7 +131,7 @@ source = "community"
 wallpaper_scheme = "m3-content"
 
     [theme.templates]
-    builtin_ids = [ "btop", "gtk3", "gtk4", "kitty", "mango", "niri", "qt", "starship" ]
+    builtin_ids = [ "btop", "gtk3", "gtk4", "hyprland", "kitty", "mango", "qt", "starship" ]
     community_ids = [ "pywalfox", "neovim", "discord" ]
 
 [wallpaper.default]

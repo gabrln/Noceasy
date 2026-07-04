@@ -5,7 +5,7 @@ scheme = "Synced"
 scale = 1.0
 
 [session]
-last = "Niri"
+last = "Hyprland (uwsm-managed)"
 
 [cursor]
 theme = "Bibata-Modern-Classic"

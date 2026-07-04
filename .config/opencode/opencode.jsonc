@@ -25,8 +25,8 @@
   },
   "command": {
     "check": {
-      "description": "Valida a configuração do compositor Niri",
-      "template": "Execute `niri validate` e reporte o resultado."
+      "description": "Valida a configuração do compositor Hyprland",
+      "template": "Execute `hyprland --verify-config` e reporte o resultado."
     },
     "rebuild": {
       "description": "Executa o script de instalação e sincronização do setup",
