@@ -10,6 +10,10 @@ if [[ -d "$HOME/.local/bin" ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-if [[ -d "$HOME/.local/share/pi-node/node-v22.23.1-linux-x64/bin" ]]; then
-    export PATH="$HOME/.local/share/pi-node/node-v22.23.1-linux-x64/bin:$PATH"
+if [[ -d "$HOME/.local/share/pi-node" ]]; then
+    for dir in "$HOME"/.local/share/pi-node/node-*/bin; do
+        if [[ -d "$dir" ]]; then
+            export PATH="$dir:$PATH"
+        fi
+    done
 fi
