@@ -8,6 +8,7 @@ set -euo pipefail
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 print_step() {
@@ -19,8 +20,17 @@ print_step "=== Iniciando Instalação do Setup Arch-gabrln ==="
 
 # 1. Elevação de privilégios única no início do script
 if [[ $EUID -ne 0 ]]; then
-    echo -e "${YELLOW}:: Solicitando senha de administrador (sudo) apenas uma vez para toda a instalação...${NC}"
-    exec sudo -E bash "$0" "$@"
+    if [ -f "$0" ]; then
+        echo -e "${YELLOW}:: Solicitando senha de administrador (sudo) apenas uma vez para toda a instalação...${NC}"
+        exec sudo -E bash "$0" "$@"
+    else
+        echo -e "${RED}Erro: Não é possível elevar privilégios automaticamente quando o script é executado via pipe (ex: curl | bash).${NC}"
+        echo -e "${YELLOW}Para prosseguir, execute o instalador diretamente com sudo:${NC}"
+        echo -e "  ${GREEN}curl -fSSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E bash${NC}"
+        echo -e "${YELLOW}ou clone o repositório:${NC}"
+        echo -e "  ${GREEN}git clone https://github.com/gabrln/Arch-gabrln.git && cd Arch-gabrln && ./install.sh${NC}"
+        exit 1
+    fi
 fi
 
 # Identificar o usuário real e seu diretório HOME
