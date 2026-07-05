@@ -7,9 +7,11 @@ hl.on("hyprland.start", function()
 
 	hl.exec_cmd([[bash -c '
 		if ! hyprpm list 2>/dev/null | grep -q scrolloverview; then
-			hyprpm update && hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git && hyprpm enable scrolloverview
+			if ! hyprpm update && hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git && hyprpm enable scrolloverview; then
+				notify-send -u critical "HyprPM" "Falha ao instalar o plugin scrolloverview. Verifique hyprpm manualmente."
+			fi
 		fi
-		hyprpm reload
+		hyprpm reload 2>/dev/null || true
 	']])
 
 	hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")

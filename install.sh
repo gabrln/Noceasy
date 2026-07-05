@@ -19,8 +19,17 @@ print_step() {
 print_step "=== Iniciando Instalação do Setup Arch-gabrln ==="
 
 # Identificar o usuário real e seu diretório HOME
+if [[ $EUID -eq 0 && -z "${SUDO_USER:-}" ]]; then
+  echo -e "${RED}ERRO: Execute via 'sudo ./install.sh', não como root diretamente.${NC}"
+  exit 1
+fi
 REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo $USER)}"
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+
+if [[ -z "$USER_HOME" || ! -d "$(dirname "$USER_HOME")" ]]; then
+  echo -e "${RED}ERRO: Não foi possível determinar o HOME do usuário '$REAL_USER'.${NC}"
+  exit 1
+fi
 
 # Configurar regra temporária no sudoers se executado como root para que comandos rodando
 # como usuário (ex: makepkg em AUR) não peçam senha
@@ -91,7 +100,7 @@ OFFICIAL_PKGS=(
 MISSING_OFFICIAL=$(pacman -T "${OFFICIAL_PKGS[@]}" 2>/dev/null || true)
 if [ -n "$MISSING_OFFICIAL" ]; then
   # shellcheck disable=SC2086
-  shelly install --noconfirm $MISSING_OFFICIAL
+  shelly install --no-confirm $MISSING_OFFICIAL
 else
   echo -e "${GREEN}Todos os pacotes oficiais já estão instalados! Pulando.${NC}"
 fi
@@ -108,7 +117,7 @@ MISSING_AUR=$(pacman -T "${AUR_PKGS[@]}" 2>/dev/null || true)
 if [ -n "$MISSING_AUR" ]; then
   print_step "Instalando pacotes AUR pendentes via shelly aur install..."
   # shellcheck disable=SC2086
-  run_as_user "shelly aur install --noconfirm $MISSING_AUR"
+  run_as_user "shelly aur install --no-confirm $MISSING_AUR"
 else
   echo -e "${GREEN}Todos os pacotes AUR já estão instalados! Pulando compilação.${NC}"
 fi
@@ -170,7 +179,6 @@ sudo mkdir -p "$USER_HOME/.config"
 sudo chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config"
 
 CONFIGS=(
-  zsh
   kitty
   zellij
   yazi
@@ -195,13 +203,57 @@ for cfg in "${CONFIGS[@]}"; do
   # Remover versão anterior/symlink e copiar configuração atualizada do repositório
   sudo rm -rf "$TARGET_PATH"
   run_as_user "cp -rfT '$SOURCE_PATH' '$TARGET_PATH'"
+  if [ ! -e "$TARGET_PATH" ]; then
+    echo -e "${RED}ERRO: Falha ao copiar $cfg para $TARGET_PATH${NC}"
+    exit 1
+  fi
 done
+
+# Zsh: copiar configs preservando plugins/ existentes
+ZSH_SRC="$REPO_DIR/.config/zsh"
+ZSH_DST="$USER_HOME/.config/zsh"
+if [ -d "$ZSH_SRC" ]; then
+  # Salvar plugins existentes
+  ZSH_PLUGINS_tmp=""
+  if [ -d "$ZSH_DST/plugins" ]; then
+    ZSH_PLUGINS_tmp=$(mktemp -d)
+    cp -rf "$ZSH_DST/plugins" "$ZSH_PLUGINS_tmp/plugins"
+  fi
+  sudo rm -rf "$ZSH_DST"
+  run_as_user "cp -rfT '$ZSH_SRC' '$ZSH_DST'"
+  # Restaurar plugins salvos
+  if [ -n "$ZSH_PLUGINS_tmp" ] && [ -d "$ZSH_PLUGINS_tmp/plugins" ]; then
+    run_as_user "cp -rf '$ZSH_PLUGINS_tmp/plugins' '$ZSH_DST/'"
+    rm -rf "$ZSH_PLUGINS_tmp"
+  fi
+  if [ ! -e "$ZSH_DST" ]; then
+    echo -e "${RED}ERRO: Falha ao copiar zsh para $ZSH_DST${NC}"
+    exit 1
+  fi
+fi
 
 # Arquivos de configuração avulsos
 run_as_user "cp -f '$REPO_DIR/.zshenv' '$USER_HOME/.zshenv'"
 run_as_user "cp -f '$REPO_DIR/.config/mimeapps.list' '$USER_HOME/.config/mimeapps.list'"
 
-# Atualizar diretórios padrão do usuário (XDG user-dirs) e criar subpastas específicas
+# Instalar plugins do Zsh caso não existam
+print_step "Verificando plugins do Zsh..."
+ZSH_PLUGINS_DIR="$USER_HOME/.config/zsh/plugins"
+ZSH_PLUGIN_REPOS=(
+  "zsh-users|zsh-autosuggestions|zsh-autosuggestions.zsh"
+  "zdharma-continuum|fast-syntax-highlighting|fast-syntax-highlighting.plugin.zsh"
+  "jeffreytse|zsh-vi-mode|zsh-vi-mode.plugin.zsh"
+)
+for plugin_spec in "${ZSH_PLUGIN_REPOS[@]}"; do
+  IFS='|' read -r repo name file <<< "$plugin_spec"
+  PLUGIN_PATH="$ZSH_PLUGINS_DIR/$name"
+  if [ ! -d "$PLUGIN_PATH" ]; then
+    echo -e "${YELLOW}Instalando plugin: $name...${NC}"
+    run_as_user "mkdir -p '$ZSH_PLUGINS_DIR' && git clone --depth=1 'https://github.com/${repo}/${name}.git' '$PLUGIN_PATH'"
+  fi
+done
+
+# 9. Configurar shell padrão e diretórios XDG
 run_as_user "xdg-user-dirs-update 2>/dev/null || true"
 run_as_user "mkdir -p '$USER_HOME/Pictures/Screenshots' '$USER_HOME/Pictures/Wallpapers' '$USER_HOME/projects'"
 
@@ -220,6 +272,13 @@ find "$REPO_DIR/.config" -type f \( -name "*.sh" -o -path "*/scripts/*" \) -exec
 
 # 10. Deploy de configurações globais do sistema
 print_step "Configurando arquivos de sistema (greetd, sessões)..."
+
+# Verificar se a config do Hyprland foi copiada corretamente
+if [ ! -f "$USER_HOME/.config/hypr/hyprland.lua" ]; then
+  echo -e "${RED}ERRO: hyprland.lua não encontrada em $USER_HOME/.config/hypr/${NC}"
+  echo -e "${RED}A configuração do Hyprland não foi copiada. Verifique o caminho e tente novamente.${NC}"
+  exit 1
+fi
 sudo mkdir -p /etc/greetd
 sudo cp "$REPO_DIR/.config/greetd/config.toml" /etc/greetd/config.toml
 sudo cp "$REPO_DIR/.config/greetd/pam_greetd" /etc/pam.d/greetd
@@ -257,4 +316,3 @@ done
 
 echo -e "${GREEN}=== Instalação e Sincronização concluídas com sucesso! ===${NC}"
 echo -e "${YELLOW}Nota: O shell padrão foi alterado para Zsh. Reinicie seu terminal ou sessão de usuário para aplicar.${NC}"
-echo -e "${YELLOW}Pendente: instale o plugin scrolloverview manualmente após o primeiro login no Hyprland (ver secao 'Pos-instalacao' no README).${NC}"
