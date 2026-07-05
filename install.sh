@@ -53,10 +53,13 @@ fi
 # Clonar ou atualizar o repositório
 if [[ -d "$REPO_DIR/.git" ]]; then
   info "Atualizando repositório em $REPO_DIR..."
+  # Corrige ownership caso arquivos tenham ficado como root de execução anterior
+  chown -R "$REAL_USER:$REAL_USER" "$REPO_DIR" 2>/dev/null || true
   sudo -u "$REAL_USER" --preserve-env=PATH,HOME git -C "$REPO_DIR" pull
 else
   info "Clonando repositório para $REPO_DIR..."
-  mkdir -p "$(dirname "$REPO_DIR")"
+  # Cria o diretório pai como o usuário real para evitar permission denied no git clone
+  sudo -u "$REAL_USER" --preserve-env=PATH,HOME mkdir -p "$USER_HOME/Projects"
   sudo -u "$REAL_USER" --preserve-env=PATH,HOME git clone "$REPO_URL" "$REPO_DIR"
 fi
 
