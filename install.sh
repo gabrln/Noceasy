@@ -137,15 +137,15 @@ fi
 print_step "Verificando ferramentas de coding AI (agy, pi-coding-agent, herdr)..."
 if ! command -v agy &>/dev/null && [ ! -f "$USER_HOME/.local/bin/agy" ]; then
   print_step "Instalando Antigravity CLI (agy)..."
-  run_as_user "curl -fsSL https://antigravity.google/cli/install.sh | bash || true"
+  run_as_user "NONINTERACTIVE=1 curl -fsSL https://antigravity.google/cli/install.sh | bash" || true
 fi
 if ! command -v pi &>/dev/null && [ ! -f "$USER_HOME/.local/bin/pi" ] && ! command -v pi-coding-agent &>/dev/null; then
   print_step "Instalando pi-coding-agent..."
-  run_as_user "sh -c 'curl -fsSL https://pi.dev/install.sh | sh' </dev/null &>/dev/null || true"
+  run_as_user "NONINTERACTIVE=1 curl -fsSL https://pi.dev/install.sh | sh" || true
 fi
 if ! command -v herdr &>/dev/null && [ ! -f "$USER_HOME/.local/bin/herdr" ]; then
   print_step "Instalando herdr..."
-  run_as_user "curl -fsSL https://herdr.dev/install.sh | sh || true"
+  run_as_user "NONINTERACTIVE=1 curl -fsSL https://herdr.dev/install.sh | sh" || true
 fi
 
 # 7. Baixar e instalar Wallpapers extras (Google Drive)
@@ -166,8 +166,11 @@ if [ -z "$(ls -A "$WP_DIR" 2>/dev/null)" ]; then
     fi
   fi
   if [ -f "$WP_TMP" ] && file "$WP_TMP" | grep -i -E "zip|archive" &>/dev/null; then
-    run_as_user "unzip -o '$WP_TMP' -d '$WP_DIR' 2>/dev/null || true"
-    rm -f "$WP_TMP"
+    WP_EXTRACT=$(mktemp -d)
+    run_as_user "unzip -o '$WP_TMP' -d '$WP_EXTRACT' 2>/dev/null || true"
+    # Mover todos os arquivos de imagem recursivamente, evitando subdiretórios extras
+    run_as_user "find '$WP_EXTRACT' -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) -exec mv {} '$WP_DIR/' +"
+    rm -rf "$WP_EXTRACT" "$WP_TMP"
   fi
 else
   echo -e "${GREEN}Pasta de Wallpapers já contém arquivos! Pulando download.${NC}"
@@ -290,15 +293,21 @@ sudo chmod 644 /var/lib/noctalia-greeter/greeter.toml
 
 # 11. Symlinks de temas para o usuário root (compatibilidade com apps gráficos sudo)
 print_step "Vinculando temas para acessibilidade de aplicativos root..."
-sudo mkdir -p "$USER_HOME/.config/qt6ct" "$USER_HOME/.local/share/icons"
+sudo mkdir -p "$USER_HOME/.local/share/icons"
 sudo chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.local"
 sudo mkdir -p /root/.config /root/.local/share
-for root_cfg in gtk-3.0 gtk-4.0 qt6ct; do
+for root_cfg in gtk-3.0 gtk-4.0; do
   sudo rm -rf "/root/.config/$root_cfg"
   sudo ln -sfT "$USER_HOME/.config/$root_cfg" "/root/.config/$root_cfg"
 done
 sudo rm -rf /root/.local/share/icons
 sudo ln -sfT "$USER_HOME/.local/share/icons" /root/.local/share/icons
+
+# Limpar qt5ct órfão e symlinks circulares do qt6ct (gerado por Noctalia em runtime)
+sudo rm -rf "$USER_HOME/.config/qt5ct"
+if [ -L "$USER_HOME/.config/qt6ct/qt6ct" ]; then
+  sudo rm -f "$USER_HOME/.config/qt6ct/qt6ct"
+fi
 
 # 12. Ativar serviços do Systemd
 print_step "Ativando serviços do Systemd..."
