@@ -137,7 +137,8 @@ fi
 
 # 8. Copiar configurações do usuário (dotfiles)
 print_step "Copiando configurações do usuário (dotfiles)..."
-run_as_user "mkdir -p '$USER_HOME/.config'"
+sudo mkdir -p "$USER_HOME/.config"
+sudo chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config"
 
 CONFIGS=(
     zsh
@@ -210,7 +211,8 @@ sudo chmod 644 /var/lib/noctalia-greeter/greeter.toml
 
 # 11. Symlinks de temas para o usuário root (compatibilidade com apps gráficos sudo)
 print_step "Vinculando temas para acessibilidade de aplicativos root..."
-run_as_user "mkdir -p '$USER_HOME/.config/qt6ct' '$USER_HOME/.local/share/icons'"
+sudo mkdir -p "$USER_HOME/.config/qt6ct" "$USER_HOME/.local/share/icons"
+sudo chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.local"
 sudo mkdir -p /root/.config /root/.local/share
 for root_cfg in gtk-3.0 gtk-4.0 qt6ct; do
     sudo rm -rf "/root/.config/$root_cfg"
