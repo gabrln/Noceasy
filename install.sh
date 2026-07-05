@@ -85,54 +85,79 @@ OFFICIAL_PKGS=(
     # System utilities & essentials
     rsync wget openssh pv hwinfo meld fsarchiver nano python-defusedxml python-packaging spice-vdagent qemu-guest-agent lua luajit libnotify jq
 )
-shelly install -n "${OFFICIAL_PKGS[@]}"
+MISSING_OFFICIAL=$(pacman -T "${OFFICIAL_PKGS[@]}" 2>/dev/null || true)
+if [ -n "$MISSING_OFFICIAL" ]; then
+    # shellcheck disable=SC2086
+    shelly install -n $MISSING_OFFICIAL
+else
+    echo -e "${GREEN}Todos os pacotes oficiais já estão instalados! Pulando.${NC}"
+fi
 hash -r
 
 # 4. Instalar pacotes extras/AUR via shelly
-print_step "Instalando pacotes AUR via shelly aur install..."
+print_step "Verificando pacotes AUR..."
 AUR_PKGS=(
     noctalia-git
     noctalia-greeter-git
     bibata-cursor-theme
     antigravity
 )
-run_as_user "shelly aur install -n ${AUR_PKGS[*]}"
+MISSING_AUR=$(pacman -T "${AUR_PKGS[@]}" 2>/dev/null || true)
+if [ -n "$MISSING_AUR" ]; then
+    print_step "Instalando pacotes AUR pendentes via shelly aur install..."
+    # shellcheck disable=SC2086
+    run_as_user "shelly aur install -n $MISSING_AUR"
+else
+    echo -e "${GREEN}Todos os pacotes AUR já estão instalados! Pulando compilação.${NC}"
+fi
 
 # 5. Instalar pacotes Flatpak via shelly
 if command -v flatpak &>/dev/null; then
-    print_step "Instalando pacotes Flatpak via shelly flatpak install..."
-    sudo flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    shelly flatpak install -n com.github.wwmm.easyeffects || sudo flatpak install -y --system flathub com.github.wwmm.easyeffects
+    if ! flatpak info com.github.wwmm.easyeffects &>/dev/null; then
+        print_step "Instalando pacotes Flatpak via shelly flatpak install..."
+        sudo flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        shelly flatpak install -n com.github.wwmm.easyeffects || sudo flatpak install -y --system flathub com.github.wwmm.easyeffects
+    else
+        echo -e "${GREEN}Pacote Flatpak easyeffects já instalado! Pulando.${NC}"
+    fi
 fi
 
 # 6. Instalar agentes de AI e ferramentas de desenvolvimento
-print_step "Instalando ferramentas de coding AI (herdr, pi-coding-agent)..."
+print_step "Verificando ferramentas de coding AI (herdr, pi-coding-agent)..."
 if command -v npm &>/dev/null; then
-    run_as_user "npm install -g --ignore-scripts --min-release-age=0 @earendil-works/pi-coding-agent 2>/dev/null || true"
+    if ! npm list -g @earendil-works/pi-coding-agent &>/dev/null; then
+        print_step "Instalando pi-coding-agent..."
+        run_as_user "npm install -g --ignore-scripts --min-release-age=0 @earendil-works/pi-coding-agent 2>/dev/null || true"
+    fi
 fi
 if ! command -v herdr &>/dev/null && [ ! -f "$USER_HOME/.local/bin/herdr" ]; then
+    print_step "Instalando herdr..."
     run_as_user "curl -sSfL https://herdr.dev/install.sh | sh 2>/dev/null || true"
 fi
 
 # 7. Baixar e instalar Wallpapers extras (Google Drive)
-print_step "Baixando e instalando pacote de Wallpapers extras..."
 WP_DIR="$USER_HOME/Pictures/Wallpapers"
 run_as_user "mkdir -p '$WP_DIR'"
-WP_TMP="/tmp/wallpapers_extra.zip"
-if [ ! -f "$WP_TMP" ]; then
-    echo -e "${YELLOW}Obtenção do link do Google Drive (ID: 16MOqfNb1JglRBxBZdhdxfK2qJN3OjOpZ)...${NC}"
-    GDRIVE_ID="16MOqfNb1JglRBxBZdhdxfK2qJN3OjOpZ"
-    GDRIVE_HTML=$(curl -sL "https://drive.google.com/uc?export=download&id=${GDRIVE_ID}")
-    GDRIVE_UUID=$(echo "$GDRIVE_HTML" | grep -o 'name="uuid" value="[^"]*' | cut -d'"' -f4 || true)
-    if [ -n "$GDRIVE_UUID" ]; then
-        curl -L -o "$WP_TMP" "https://drive.usercontent.google.com/download?id=${GDRIVE_ID}&export=download&confirm=t&uuid=${GDRIVE_UUID}"
-    else
-        curl -L -o "$WP_TMP" "https://drive.google.com/uc?export=download&confirm=t&id=${GDRIVE_ID}"
+if [ -z "$(ls -A "$WP_DIR" 2>/dev/null)" ]; then
+    print_step "Baixando e instalando pacote de Wallpapers extras..."
+    WP_TMP="/tmp/wallpapers_extra.zip"
+    if [ ! -f "$WP_TMP" ]; then
+        echo -e "${YELLOW}Obtenção do link do Google Drive (ID: 16MOqfNb1JglRBxBZdhdxfK2qJN3OjOpZ)...${NC}"
+        GDRIVE_ID="16MOqfNb1JglRBxBZdhdxfK2qJN3OjOpZ"
+        GDRIVE_HTML=$(curl -sL "https://drive.google.com/uc?export=download&id=${GDRIVE_ID}")
+        GDRIVE_UUID=$(echo "$GDRIVE_HTML" | grep -o 'name="uuid" value="[^"]*' | cut -d'"' -f4 || true)
+        if [ -n "$GDRIVE_UUID" ]; then
+            curl -L -o "$WP_TMP" "https://drive.usercontent.google.com/download?id=${GDRIVE_ID}&export=download&confirm=t&uuid=${GDRIVE_UUID}"
+        else
+            curl -L -o "$WP_TMP" "https://drive.google.com/uc?export=download&confirm=t&id=${GDRIVE_ID}"
+        fi
     fi
-fi
-if [ -f "$WP_TMP" ] && file "$WP_TMP" | grep -i -E "zip|archive" &>/dev/null; then
-    run_as_user "unzip -o '$WP_TMP' -d '$WP_DIR' 2>/dev/null || true"
-    rm -f "$WP_TMP"
+    if [ -f "$WP_TMP" ] && file "$WP_TMP" | grep -i -E "zip|archive" &>/dev/null; then
+        run_as_user "unzip -o '$WP_TMP' -d '$WP_DIR' 2>/dev/null || true"
+        rm -f "$WP_TMP"
+    fi
+else
+    echo -e "${GREEN}Pasta de Wallpapers já contém arquivos! Pulando download.${NC}"
 fi
 
 # 8. Copiar configurações do usuário (dotfiles)
