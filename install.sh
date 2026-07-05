@@ -42,7 +42,15 @@ if [[ -z "$USER_HOME" || ! -d "$USER_HOME" ]]; then
   error "Não foi possível determinar o HOME do usuário '$REAL_USER'."
 fi
 
+if [[ "$REAL_USER" == "root" ]]; then
+  error "Execute como usuário normal com sudo. Ex: curl ... | sudo bash"
+fi
+
 REPO_DIR="$USER_HOME/$CLONE_SUBDIR"
+
+# Marca o diretório como seguro para o git, evitando "fatal: detected dubious ownership"
+# quando o repo foi clonado por root e depois usado por outro usuário
+git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
 
 # Garantir git
 if ! command -v git &>/dev/null; then
@@ -61,6 +69,8 @@ else
   # Cria o diretório pai como o usuário real para evitar permission denied no git clone
   sudo -u "$REAL_USER" --preserve-env=PATH,HOME mkdir -p "$USER_HOME/Projects"
   sudo -u "$REAL_USER" --preserve-env=PATH,HOME git clone "$REPO_URL" "$REPO_DIR"
+  # Segurança extra: garante ownership correto no repositório clonado
+  chown -R "$REAL_USER:$REAL_USER" "$REPO_DIR" 2>/dev/null || true
 fi
 
 success "Repositório pronto em $REPO_DIR"
