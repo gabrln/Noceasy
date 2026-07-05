@@ -106,6 +106,12 @@ name = "bluez-utils"
 group = "networking"
 description = "Bluetooth utilities"
 
+
+[[packages]]
+name = "dbus"
+group = "display"
+description = "D-Bus message bus"
+
 [[packages]]
 name = "greetd"
 group = "display"
