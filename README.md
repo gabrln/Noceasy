@@ -13,12 +13,52 @@ Ambiente Wayland focado em produtividade e estética unificada no **Arch Linux /
 
 O instalador automatiza a instalação de pacotes, diretórios XDG, wallpapers e sincroniza os dotfiles.
 
-**Instalação padrão (recomendado):**
+O `install.sh` é um thin wrapper que clona/atualiza este repositório em `~/Projects/Arch-gabrln` e executa o framework `gabrln`.
+
+### Instalação padrão
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E bash
 ```
 
-O `install.sh` é um thin wrapper que clona/atualiza este repositório em `~/Projects/Arch-gabrln` e executa o framework `gabrln`.
+> O `sudo -E` é recomendado porque preserva as variáveis de ambiente (necessário para as flags via ambiente, ex: `GABRLN_GAMING=1`).
+
+### Com profile gaming
+
+**Via variável de ambiente (recomendado com `curl | bash`):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E GABRLN_GAMING=1 bash
+```
+
+**Via flag (salvando o script primeiro):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh -o /tmp/install.sh
+sudo bash /tmp/install.sh --gaming
+```
+
+**Via flag direto pelo pipe:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E bash -s -- --gaming
+```
+
+### Forçar reexecução de todos os módulos
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E GABRLN_FORCE=1 bash
+```
+
+### Combinando gaming + force
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E GABRLN_GAMING=1 GABRLN_FORCE=1 bash
+```
+
+### Após clonar o repositório
+
+```bash
+cd ~/Projects/Arch-gabrln
+sudo ./gabrln install --gaming
+```
 
 ## Comandos do framework
 
