@@ -213,19 +213,9 @@ done
 ZSH_SRC="$REPO_DIR/.config/zsh"
 ZSH_DST="$USER_HOME/.config/zsh"
 if [ -d "$ZSH_SRC" ]; then
-  # Salvar plugins existentes
-  ZSH_PLUGINS_tmp=""
-  if [ -d "$ZSH_DST/plugins" ]; then
-    ZSH_PLUGINS_tmp=$(mktemp -d)
-    cp -rf "$ZSH_DST/plugins" "$ZSH_PLUGINS_tmp/plugins"
-  fi
   sudo rm -rf "$ZSH_DST"
   run_as_user "cp -rfT '$ZSH_SRC' '$ZSH_DST'"
-  # Restaurar plugins salvos
-  if [ -n "$ZSH_PLUGINS_tmp" ] && [ -d "$ZSH_PLUGINS_tmp/plugins" ]; then
-    run_as_user "cp -rf '$ZSH_PLUGINS_tmp/plugins' '$ZSH_DST/'"
-    rm -rf "$ZSH_PLUGINS_tmp"
-  fi
+  # Reinstalar plugins (etapa abaixo cuida disso)
   if [ ! -e "$ZSH_DST" ]; then
     echo -e "${RED}ERRO: Falha ao copiar zsh para $ZSH_DST${NC}"
     exit 1
