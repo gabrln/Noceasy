@@ -10,7 +10,9 @@ fi
 
 log_info "Atualizando manifesto hyprpm em $AUTOSTART_FILE..."
 
-python3 -c '
+# Usamos heredoc para evitar conflito entre aspas do bash e aspas simples
+# dentro do script Python (ex: 'bash -c ' no bloco hyprpm).
+python3 << PYTHON_EOF
 import sys, tomllib, re, textwrap
 manifest_file, autostart_file = sys.argv[1], sys.argv[2]
 
@@ -53,14 +55,18 @@ replacement = f"{begin_marker}\n{new_block}\n{end_marker}"
 if pattern.search(content):
     content = pattern.sub(replacement, content)
 else:
-    # Insere antes do fechamento do hl.on("hyprland.start", function() ... end)
-    # Procura o último "end)" do arquivo
+    # Insere no final do arquivo
     content = content.rstrip() + "\n\n" + replacement + "\n"
 
 with open(autostart_file, "w") as f:
     f.write(content)
 
 print(f"Manifesto hyprpm atualizado com {len(plugins)} plugin(s).")
-' "$MANIFESTS_DIR/hyprpm.toml" "$AUTOSTART_FILE"
+PYTHON_EOF
+python3_rc=$?
+
+if [[ $python3_rc -ne 0 ]]; then
+  exit_with_error "Falha ao gerar manifesto hyprpm (python3 retornou $python3_rc)."
+fi
 
 log_success "Manifesto hyprpm aplicado."
