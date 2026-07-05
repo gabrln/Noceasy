@@ -214,14 +214,6 @@ fi
 # Tornar scripts executáveis
 find "$REPO_DIR/.config" -type f \( -name "*.sh" -o -path "*/scripts/*" \) -exec chmod +x {} + 2>/dev/null || true
 
-# 9. Configurar plugins do Hyprland (scrolloverview)
-#if command -v hyprpm &>/dev/null; then
-#    print_step "Configurando plugins do Hyprland (scrolloverview)..."
-#        run_as_user "hyprpm update 2>/dev/null || true"
-#        run_as_user "hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git 2>/dev/null || true"
-#        run_as_user "hyprpm enable scrolloverview 2>/dev/null || true"
-#fi
-
 # 10. Deploy de configurações globais do sistema
 print_step "Configurando arquivos de sistema (greetd, sessões)..."
 sudo mkdir -p /etc/greetd
