@@ -352,9 +352,9 @@ group = "themes"
 description = "Adwaita GTK theme"
 
 [[packages]]
-name = "qt6ct"
+name = "qt6ct-kde"
 group = "themes"
-description = "Qt6 configuration tool"
+description = "Qt6 configuration tool with KDE patches"
 
 [[packages]]
 name = "prismlauncher"
