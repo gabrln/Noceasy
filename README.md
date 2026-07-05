@@ -11,8 +11,15 @@ Ambiente Wayland focado em produtividade e estética unificada no **Arch Linux /
 
 ## Instalação
 
-O instalador automatiza a instalação de pacotes, diretórios XDG, wallpapers e vincula os dotfiles com backup seguro:
+O instalador automatiza a instalação de pacotes, diretórios XDG, wallpapers e vincula os dotfiles com backup seguro.
 
+**Opção 1: Instalação Padrão**
+```bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | bash
+```
+
+**Opção 2: Sem redigitar senha (Recomendado)**
+Caso não queira digitar a senha de administrador (`sudo`) várias vezes durante o processo de instalação dos pacotes e serviços, execute passando as variáveis para o root desde o início:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E bash
 ```
