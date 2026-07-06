@@ -166,7 +166,6 @@ cmd_install() {
   run_module "09-hyprland-env"
   run_module "10-greeter"
   run_module "11-keyring"
-  run_module "12-hyprpm-manifest" "$MANIFESTS_DIR/hyprpm.toml"
   run_module "13-wallpapers" "$MANIFESTS_DIR/wallpapers.toml"
   run_module "14-icons-cursors-fonts"
   run_module "15-system-tweaks"
@@ -189,7 +188,6 @@ cmd_update() {
 
   run_module "08-dotfiles" "$MANIFESTS_DIR/dotfiles.toml"
   run_module "04-yay-aur" "$MANIFESTS_DIR/aur.toml"
-  run_module "12-hyprpm-manifest" "$MANIFESTS_DIR/hyprpm.toml"
 
   log_success "Atualização concluída."
 }
@@ -206,8 +204,7 @@ cmd_repair() {
   run_module "10-greeter"
   run_module "11-keyring"
   run_module "12-hyprpm-manifest" "$MANIFESTS_DIR/hyprpm.toml"
-  run_module "16-services" "$MANIFESTS_DIR/services.toml"
-
+  run_module "1
   log_info "Reparo concluído. Se o Alt+Tab ainda não funcionar, execute manualmente no Hyprland:"
   log_info "  hyprpm update && hyprpm add https://github.com/yayuuu/hyprland-scroll-overview.git && hyprpm enable scrolloverview"
   log_success "Reparo finalizado."
