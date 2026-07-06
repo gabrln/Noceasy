@@ -1,21 +1,4 @@
--- =========================================================================
--- bootstrap.lua - Instala plugins hyprpm declarados, abrindo um terminal
--- visual se algum estiver faltando. Roda silenciosamente no primeiro login
--- grafico, sem atrapalhar a inicializacao.
---
--- Por que nao rodar via instalador?
---   'hyprpm update' precisa do Hyprland rodando para puxar os headers da
---   versao exata em execucao. Em TTY o Hyprland nao esta rodando, e o
---   'add' bloqueia com "Headers outdated, please run hyprpm update".
---   Este script roda dentro de hl.on("hyprland.start"), onde a sessao
---   ja existe.
---
--- Comportamento:
---   - hyprpm list silencioso (sem output, com timeout curto)
---   - se o plugin JA esta: sai em ~50ms
---   - se NAO esta: abre um terminal visivel com o comando de instalacao
---     e permite o usuario acompanhar
--- =========================================================================
+#!/usr/bin/env lua 
 
 local function exec_capture(cmd)
   local handle = io.popen(cmd .. " 2>/dev/null")
