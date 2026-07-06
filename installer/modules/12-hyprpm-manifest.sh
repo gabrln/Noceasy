@@ -1,73 +1,55 @@
 #!/usr/bin/env bash
-# 12-hyprpm-manifest.sh - Gera bloco gerenciado de plugins hyprpm no autostart.lua
+# 12-hyprpm-manifest.sh - Instala plugins hyprpm declarados no manifesto
+#
+# A logica de hyprpm vive inteiramente aqui (no instalador) e NAO no
+# autostart.lua. Rodar hyprpm no autostart tem dois problemas:
+#   1. Faz o Hyprland esperar build+download de plugins a cada login
+#      (3-10s atrasando a sessao grafica).
+#   2. Se a rede cair, o login fica meio-funcional at voce corrigir.
+# Como instalador, garantimos que os plugins estao prontos ANTES do
+# primeiro login. Hyprpm opera em modo CLI independente do Hyprland
+# estar rodando (ele manipula ~/.local/share/hyprpm/ e o hyprland.conf).
 
-AUTOSTART_FILE="$USER_HOME/.config/hypr/modules/autostart.lua"
-
-if [[ ! -f "$AUTOSTART_FILE" ]]; then
-  log_warn "$AUTOSTART_FILE não encontrado. Pulando manifesto hyprpm."
+if ! is_command hyprpm; then
+  log_warn "hyprpm não está instalado. Pulando manifesto de plugins."
   return 0
 fi
 
-log_info "Atualizando manifesto hyprpm em $AUTOSTART_FILE..."
-
-# Usamos heredoc para evitar conflito entre aspas do bash e aspas simples
-# dentro do script Python (ex: 'bash -c ' no bloco hyprpm).
-# O "-" faz o Python ler o script do stdin e os argumentos viram sys.argv[1..N].
-cat << PYTHON_EOF | python3 - "$MANIFESTS_DIR/hyprpm.toml" "$AUTOSTART_FILE"
-import sys, tomllib, re, textwrap
-manifest_file, autostart_file = sys.argv[1], sys.argv[2]
-
-with open(manifest_file, "rb") as f:
+mapfile -t PLUGINS < <(python3 -c '
+import sys, tomllib
+with open(sys.argv[1], "rb") as f:
     data = tomllib.load(f)
+for p in data.get("plugins", []):
+    print(p["name"] + "|" + p["repo"])
+' "$MANIFESTS_DIR/hyprpm.toml")
 
-plugins = data.get("plugins", [])
-if not plugins:
-    print("Nenhum plugin hyprpm configurado.")
-    sys.exit(0)
-
-lines = ["hl.exec_cmd([[bash -c '"]
-inner = []
-for plugin in plugins:
-    name = plugin["name"]
-    repo = plugin["repo"]
-    inner.append(textwrap.dedent(f"""
-        if ! hyprpm list 2>/dev/null | grep -q {name}; then
-            if hyprpm update && hyprpm add https://github.com/{repo}.git && hyprpm enable {name}; then
-                hyprpm reload 2>/dev/null || true
-            else
-                notify-send -u critical "HyprPM" "Falha ao instalar o plugin {name}. Verifique hyprpm manualmente."
-            fi
-        fi
-    """).strip())
-
-lines.append("\n".join(inner))
-lines.append("']])")
-new_block = "\n".join(lines)
-
-begin_marker = "-- BEGIN gabrln-managed:hyprpm"
-end_marker = "-- END gabrln-managed:hyprpm"
-
-with open(autostart_file, "r") as f:
-    content = f.read()
-
-pattern = re.compile(rf"{re.escape(begin_marker)}.*?{re.escape(end_marker)}", re.DOTALL)
-replacement = f"{begin_marker}\n{new_block}\n{end_marker}"
-
-if pattern.search(content):
-    content = pattern.sub(replacement, content)
-else:
-    # Insere no final do arquivo
-    content = content.rstrip() + "\n\n" + replacement + "\n"
-
-with open(autostart_file, "w") as f:
-    f.write(content)
-
-print(f"Manifesto hyprpm atualizado com {len(plugins)} plugin(s).")
-PYTHON_EOF
-python3_rc=$?
-
-if [[ $python3_rc -ne 0 ]]; then
-  exit_with_error "Falha ao gerar manifesto hyprpm (python3 retornou $python3_rc)."
+if [[ ${#PLUGINS[@]} -eq 0 ]]; then
+  log_warn "Nenhum plugin hyprpm configurado. Pulando."
+  return 0
 fi
+
+log_info "Sincronizando base do hyprpm..."
+run_as_user "hyprpm update" || log_warn "hyprpm update falhou. Continuando mesmo assim."
+
+for entry in "${PLUGINS[@]}"; do
+  name="${entry%%|*}"
+  repo="${entry#*|}"
+
+  if run_as_user "hyprpm list 2>/dev/null | grep -q ${name}"; then
+    log_success "Plugin $name já está instalado. Pulando."
+    continue
+  fi
+
+  log_info "Instalando plugin hyprpm: $name (repo: $repo)..."
+  if ! run_as_user "hyprpm add https://github.com/${repo}.git"; then
+    log_warn "Falha ao adicionar $name. Continuando."
+    continue
+  fi
+  if ! run_as_user "hyprpm enable ${name}"; then
+    log_warn "Falha ao habilitar $name. Continuando."
+    continue
+  fi
+  log_success "Plugin $name instalado e habilitado."
+done
 
 log_success "Manifesto hyprpm aplicado."
