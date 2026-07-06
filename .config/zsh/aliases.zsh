@@ -26,10 +26,10 @@ fi
 alias grep="rg"
 alias find="fd"
 
-alias update="shelly upgrade-all"
-alias install="shelly install"
-alias remove="shelly remove"
-alias search="shelly query"
+alias update="sudo pacman -Syu && yay -Sua"
+alias install="sudo pacman -S"
+alias remove="sudo pacman -Rns"
+alias search="pacman -Ss"
 
 alias make="make -j\$(nproc)"
 alias ninja="ninja -j\$(nproc)"

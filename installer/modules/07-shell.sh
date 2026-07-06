@@ -5,7 +5,7 @@ log_info "Configurando shell padrão..."
 
 # Garante que zsh está instalado antes de tentar mudar o shell
 if ! command -v zsh &>/dev/null && [[ ! -x /usr/bin/zsh ]]; then
-  log_error "zsh não está instalado. O módulo 03-shelly-official deveria ter instalado. Verifique."
+  log_error "zsh não está instalado. O módulo 03-pacman-official deveria ter instalado. Verifique."
   return 1
 fi
 

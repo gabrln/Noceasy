@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 05-shelly-flatpak.sh - Instala pacotes Flatpak via shelly
+# 05-flatpak.sh - Instala pacotes Flatpak via flatpak
 
 if ! is_command flatpak; then
   log_warn "flatpak não está instalado. Pulando."
@@ -38,9 +38,8 @@ fi
 
 log_info "Instalando pacotes Flatpak pendentes: ${missing_pkgs[*]}"
 for pkg in "${missing_pkgs[@]}"; do
-  if ! shelly flatpak install -n "$pkg"; then
-    log_warn "shelly falhou para $pkg. Tentando flatpak install direto..."
-    flatpak install -y --system flathub "$pkg"
+  if ! flatpak install -y --system flathub "$pkg"; then
+    log_warn "flatpak falhou para $pkg."
   fi
 done
 

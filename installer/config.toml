@@ -23,8 +23,9 @@ modules_dir = "installer/modules"
 # Diretório padrão onde o repositório será clonado quando executado via curl
 clone_target = "Projects/Arch-gabrln"
 
-# Pacotes mínimos para bootstrap do shelly
-# Inclui zsh porque é dependência do chsh no módulo 07-shell
+# Pacotes mínimos para bootstrap do sistema (zsh, git, base-devel).
+# zsh é dependência do chsh no módulo 07-shell.
+# git e base-devel são necessários para compilações AUR via yay.
 bootstrap_packages = ["git", "base-devel", "zsh"]
 
 # Espaço mínimo recomendado em bytes (5 GiB)

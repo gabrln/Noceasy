@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 04-shelly-aur.sh - Instala pacotes AUR via shelly
+# 04-yay-aur.sh - Instala pacotes AUR via yay
 
 log_info "Lendo pacotes AUR do manifesto..."
 
@@ -30,10 +30,23 @@ if [[ ${#MISSING_ARR[@]} -eq 0 ]]; then
   return 0
 fi
 
-log_info "Instalando pacotes AUR pendentes via shelly aur install: ${MISSING_ARR[*]}"
-# printf %q escapa os argumentos para que newlines/espaços não quebrem o bash -c
+log_info "Instalando pacotes AUR pendentes via yay: ${MISSING_ARR[*]}"
+# yay nunca deve rodar como root (recusa por padrão) -> run_as_user.
+# Flags reais do yay para lote não-interativo (não existe um único "--silent"):
+#   --noconfirm       não pede confirmação de instalação
+#   --nocleanmenu     não mostra menu de limpeza de pacotes órfãos de build
+#   --nodiffmenu      não mostra diff do PKGBUILD
+#   --noeditmenu      não abre editor para o PKGBUILD
+#   --noupgrademenu   não mostra menu de seleção de upgrades
+#   --removemake      remove makedepends após o build (mantém sistema limpo)
 quoted_args=$(printf '%q ' "${MISSING_ARR[@]}")
-run_as_user "shelly aur install --no-confirm $quoted_args"
+run_as_user "yay -S --needed --noconfirm --nocleanmenu --nodiffmenu --noeditmenu --noupgrademenu --removemake $quoted_args"
 
 hash -r
-log_success "Pacotes AUR instalados."
+
+mapfile -t STILL_MISSING < <(pacman -T "${MISSING_ARR[@]}" 2>/dev/null || true)
+if [[ ${#STILL_MISSING[@]} -gt 0 ]]; then
+  exit_with_error "Pacotes AUR não confirmados após instalação: ${STILL_MISSING[*]}"
+fi
+
+log_success "Pacotes AUR instalados e confirmados."

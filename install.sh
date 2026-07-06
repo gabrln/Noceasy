@@ -90,13 +90,5 @@ fi
 success "Repositório pronto em $REPO_DIR"
 info "Executando o framework..."
 
-# Converte variáveis de ambiente em flags (útil quando executado via curl | sudo -E bash)
-if [[ "${GABRLN_GAMING:-0}" == "1" || "${GABRLN_GAMING:-}" == "true" ]]; then
-  set -- "$@" --gaming
-fi
-if [[ "${GABRLN_FORCE:-0}" == "1" || "${GABRLN_FORCE:-}" == "true" ]]; then
-  set -- "$@" --force
-fi
-
-# Delegar para o entrypoint real
+# Delegar para o entrypoint real (aceita flags posicionais --gaming, --force)
 exec "$REPO_DIR/installer/gabrln" install "$@"

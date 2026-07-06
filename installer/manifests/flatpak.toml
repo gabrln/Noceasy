@@ -1,4 +1,4 @@
-# Pacotes Flatpak instalados via shelly flatpak install
+# Pacotes Flatpak instalados via flatpak
 
 [remote]
 name = "flathub"

@@ -6,26 +6,21 @@ pacman -Sy
 
 log_info "Garantindo pacotes de bootstrap..."
 # shellcheck disable=SC2046
-pacman -S --needed --noconfirm $(toml_get "$CONFIG_FILE" "install.bootstrap_packages" "git base-devel" | tr '\n' ' ')
+pacman -S --needed --noconfirm $(toml_get "$CONFIG_FILE" "install.bootstrap_packages" "git base-devel zsh" | tr '\n' ' ')
 
-log_info "Verificando gerenciador de pacotes shelly..."
-if is_command shelly; then
-  log_success "shelly já está instalado."
+log_info "Garantindo yay (AUR helper)..."
+if is_command yay; then
+  log_success "yay já está instalado."
 else
-  log_warn "shelly não encontrado nos repositórios. Instalando via AUR..."
-  run_as_user '
-    rm -rf /tmp/shelly-bin
-    env GIT_TERMINAL_PROMPT=0 git clone https://aur.archlinux.org/shelly-bin.git /tmp/shelly-bin
-    cd /tmp/shelly-bin
-    makepkg -si --noconfirm
-    rm -rf /tmp/shelly-bin
-  '
-  hash -r
-  if ! is_command shelly; then
-    exit_with_error "Falha ao instalar o shelly."
+  log_warn "yay não encontrado. Instalando via pacman (repo cachyos)..."
+  if ! pacman -S --needed --noconfirm yay; then
+    exit_with_error "Falha ao instalar yay via pacman. Verifique se o repositório [cachyos] está habilitado em /etc/pacman.conf."
   fi
-  log_success "shelly instalado via AUR."
 fi
 
 hash -r
+if ! is_command yay; then
+  exit_with_error "yay não está disponível após a tentativa de instalação."
+fi
+
 log_success "Bootstrap concluído."

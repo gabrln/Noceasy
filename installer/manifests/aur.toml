@@ -1,4 +1,4 @@
-# Pacotes AUR instalados via shelly aur install
+# Pacotes AUR instalados via yay
 
 [[packages]]
 name = "noctalia-git"

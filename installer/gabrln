@@ -175,9 +175,9 @@ cmd_install() {
   run_module "00-preflight"
   run_module "01-backup" "$MANIFESTS_DIR/dotfiles.toml"
   run_module "02-pacman-bootstrap"
-  run_module "03-shelly-official" "$MANIFESTS_DIR/packages.toml"
-  run_module "04-shelly-aur" "$MANIFESTS_DIR/aur.toml"
-  run_module "05-shelly-flatpak" "$MANIFESTS_DIR/flatpak.toml"
+  run_module "03-pacman-official" "$MANIFESTS_DIR/packages.toml"
+  run_module "04-yay-aur" "$MANIFESTS_DIR/aur.toml"
+  run_module "05-flatpak" "$MANIFESTS_DIR/flatpak.toml"
   run_module "06-curl-tools" "$MANIFESTS_DIR/curl-tools.toml"
   run_module "07-shell" "$MANIFESTS_DIR/zsh-plugins.toml"
   run_module "08-dotfiles" "$MANIFESTS_DIR/dotfiles.toml"
@@ -207,7 +207,7 @@ cmd_update() {
   run_as_user "git -C '$REPO_DIR' pull"
 
   run_module "08-dotfiles" "$MANIFESTS_DIR/dotfiles.toml"
-  run_module "04-shelly-aur" "$MANIFESTS_DIR/aur.toml"
+  run_module "04-yay-aur" "$MANIFESTS_DIR/aur.toml"
   run_module "12-hyprpm-manifest" "$MANIFESTS_DIR/hyprpm.toml"
 
   log_success "Atualização concluída."
