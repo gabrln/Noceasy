@@ -32,15 +32,18 @@ fi
 
 log_info "Instalando pacotes AUR pendentes via yay: ${MISSING_ARR[*]}"
 # yay nunca deve rodar como root (recusa por padrão) -> run_as_user.
-# Flags reais do yay para lote não-interativo (não existe um único "--silent"):
-#   --noconfirm       não pede confirmação de instalação
-#   --nocleanmenu     não mostra menu de limpeza de pacotes órfãos de build
-#   --nodiffmenu      não mostra diff do PKGBUILD
-#   --noeditmenu      não abre editor para o PKGBUILD
-#   --noupgrademenu   não mostra menu de seleção de upgrades
-#   --removemake      remove makedepends após o build (mantém sistema limpo)
+# Flags do yay (v13) validadas para lote nao-interativo:
+#   --noconfirm         assume "sim" em todos os prompts do pacman
+#   --removemake        remove makedepends apos o build sem perguntar
+#                       (torna desnecessario o antigo --nocleanmenu, que NAO EXISTE)
+#   --nodiffmenu        pula menu de diff do PKGBUILD
+#   --noeditmenu        pula menu de edicao do PKGBUILD
+#   --noupgrademenu     pula menu de selecao de upgrades
+#   --answerclean All   responde "All" para o prompt "remover deps de build?"
+#   --answerdiff None   responde "None" para o prompt "mostrar diff?"
+#   --answeredit None   responde "None" para o prompt "editar PKGBUILD?"
 quoted_args=$(printf '%q ' "${MISSING_ARR[@]}")
-run_as_user "yay -S --needed --noconfirm --nocleanmenu --nodiffmenu --noeditmenu --noupgrademenu --removemake $quoted_args"
+run_as_user "yay -S --needed --noconfirm --removemake --nodiffmenu --noeditmenu --noupgrademenu --answerclean All --answerdiff None --answeredit None $quoted_args"
 
 hash -r
 
