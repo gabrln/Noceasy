@@ -1,13 +1,13 @@
 -- =========================================================================
--- Regras de Janelas e Camadas (Módulo Lua)
+-- Hyprland window and layer rules (Lua module)
 -- =========================================================================
 
--- Scratchpads (workspaces especiais) – tamanho, posição e foco
+-- Scratchpads (special workspaces) – size, position, and focus
 hl.window_rule({ match = { class = "kitty-drop" },       float = true, size = "1600 900", center = true, stay_focused = true, workspace = "special:kitty-drop" })
 hl.window_rule({ match = { class = "btop-scratch" },     float = true, size = "1600 900", center = true, stay_focused = true, workspace = "special:btop-scratch" })
 hl.window_rule({ match = { class = "keyhints-scratch" }, float = true, size = "900 900", center = true, stay_focused = true, workspace = "special:keyhints-scratch" })
 
--- Painel de configurações do Noctalia (flutuante 1400x800 centralizado)
+-- Noctalia settings panel (floating, centred)
 hl.window_rule({
     match = { class = "dev.noctalia.Noctalia.Settings" },
     float = true,
@@ -15,28 +15,26 @@ hl.window_rule({
     center = true,
 })
 
--- Regras gerais (maximizar aplicações principais)
+-- General rules: maximise main applications
 hl.window_rule({ match = { class = "firefox" },       maximize = true })
 hl.window_rule({ match = { class = "google-chrome" }, maximize = true })
 hl.window_rule({ match = { class = "code" },          maximize = true })
 hl.window_rule({ match = { class = "obsidian" },      maximize = true })
 
 -- Inhibit screen idle (screensaver / suspend) while media is playing or a
--- game is running fullscreen. The regex is matched against window class;
--- keep it tight to avoid blocking idle on unrelated windows that happen
--- to contain the substring.
+-- game is running fullscreen.
 hl.window_rule({
     match = { class = ".*(celluloid|^mpv$|vlc|spotify|librewolf|floorp|brave-browser|firefox|chromium|zen-browser|vivaldi|steam_app_.*|gamescope|lutris|heroic|dota2|cs2|wine.*).*" },
     idle_inhibit = "fullscreen",
 })
 
--- Diálogos flutuantes e utilitários
+-- Floating dialogs and utilities
 hl.window_rule({ match = { title = ".*(Open|Save|Select|File|Dialog|Properties|Preferences|Settings|Rename|Authentication).*" }, float = true })
 hl.window_rule({ match = { class = "org.gtk.FileChooserDialog" }, float = true })
 hl.window_rule({ match = { class = "zenity" },                    float = true })
 hl.window_rule({ match = { class = "pavucontrol" },               float = true })
 
--- Firefox Picture-in-Picture: fixo, semi-transparente, 30% da tela
+-- Firefox Picture-in-Picture: pinned, semi-transparent, 30% of screen
 hl.window_rule({
     match             = { class = "firefox", title = "^Picture-in-Picture$" },
     float             = true,
@@ -47,7 +45,7 @@ hl.window_rule({
     opacity           = "0.95 0.75",
 })
 
--- Regras de camada: desfoque (blur) e remoção de animações conflitantes
+-- Layer rules: blur and no-anim for noctalia panels and OSD
 hl.layer_rule({
     match = { namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|wallpaper|background)$" },
     no_anim = true,

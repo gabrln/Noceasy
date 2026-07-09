@@ -1,31 +1,31 @@
 -- =========================================================================
--- Variáveis de Ambiente do Hyprland (Módulo Lua)
+-- Hyprland environment variables (Lua module)
 -- =========================================================================
 
--- Parâmetros centrais do Wayland
+-- Core Wayland parameters
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("GDK_BACKEND", "wayland,x11,*")
 hl.env("CLUTTER_BACKEND", "wayland")
 
--- Temas para Qt/GTK
+-- Qt / GTK themes
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")
 hl.env("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 
--- Aceleração para navegadores e Electron
+-- Hardware acceleration for browsers and Electron
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
--- Cursor e ferramentas padrão (antes no .config/uwsm/env)
+-- Cursor and default tools (previously in .config/uwsm/env)
 hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("EDITOR", "nvim")
 hl.env("TERMINAL", "kitty")
 
--- Correção para base de dados de mime-info no XDG_DATA_DIRS
+-- Ensure /usr/share is in XDG_DATA_DIRS for mime-info
 local current_data_dirs = os.getenv("XDG_DATA_DIRS") or ""
 if not current_data_dirs:find("/usr/share") then
     local new_data_dirs = "/usr/local/share:/usr/share"

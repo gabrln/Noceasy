@@ -1,5 +1,5 @@
 -- =========================================================================
--- Configurações Gerais e Layout do Hyprland (Módulo Lua)
+-- Hyprland general settings and layout (Lua module)
 -- =========================================================================
 
 hl.config({

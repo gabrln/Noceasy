@@ -1,4 +1,4 @@
-"""Module orchestration: the loop that runs the 16 modules in order."""
+"""Module orchestration: the loop that runs the modules in order."""
 
 from __future__ import annotations
 

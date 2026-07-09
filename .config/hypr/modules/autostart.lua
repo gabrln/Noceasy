@@ -1,15 +1,15 @@
 -- =========================================================================
--- Inicialização Automática e Serviços (Módulo Lua)
+-- Automatic startup and services (Lua module)
 -- =========================================================================
 
 hl.on("hyprland.start", function()
 	hl.exec_cmd("noctalia")
 
-	-- Plugins hyprpm: bootstrap.lua verifica silenciosamente se ja
-	-- estao instalados (~50ms no caso comum). Se faltar algum, abre
-	-- um terminal visivel com o comando de instalacao. Nao roda
-	-- durante a instalacao porque 'hyprpm update' precisa do
-	-- Hyprland rodando para puxar os headers da versao em execucao.
+	-- hyprpm plugins: bootstrap.lua checks silently (~50ms in the
+	-- common case). If any are missing, it opens a visible terminal
+	-- with the install command. This does not run during 'install.sh'
+	-- because 'hyprpm update' needs Hyprland running to fetch the
+	-- headers for the current version.
 	hl.exec_cmd("lua ~/.config/hypr/scripts/bootstrap.lua")
 
 	hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")

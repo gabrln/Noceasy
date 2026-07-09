@@ -22,10 +22,10 @@ local function open_terminal_with(cmd)
   -- Tenta o terminal padrao do ambiente. Cobre os 4 mais comuns em
   -- setups Hyprland. Se nenhum existir, cai para notify-send.
   local candidates = {
-    "kitty --title hyprpm-bootstrap -e bash -c '" .. cmd .. "; echo; echo \"Pressione Enter para fechar\"; read'",
-    "foot --title hyprpm-bootstrap -e bash -c '" .. cmd .. "; echo; echo \"Pressione Enter para fechar\"; read'",
-    "alacritty --title hyprpm-bootstrap -e bash -c '" .. cmd .. "; echo; echo \"Pressione Enter para fechar\"; read'",
-    "gnome-terminal -- bash -c '" .. cmd .. "; echo; echo \"Pressione Enter para fechar\"; read'",
+    "kitty --title hyprpm-bootstrap -e bash -c '" .. cmd .. "; echo; echo \"Press Enter to close\"; read'",
+    "foot --title hyprpm-bootstrap -e bash -c '" .. cmd .. "; echo; echo \"Press Enter to close\"; read'",
+    "alacritty --title hyprpm-bootstrap -e bash -c '" .. cmd .. "; echo; echo \"Press Enter to close\"; read'",
+    "gnome-terminal -- bash -c '" .. cmd .. "; echo; echo \"Press Enter to close\"; read'",
   }
   for _, full in ipairs(candidates) do
     -- Checa se o binario existe antes de tentar abrir
@@ -35,8 +35,8 @@ local function open_terminal_with(cmd)
       return true
     end
   end
-  -- Fallback: notificacao. O usuario roda manualmente.
-  hl.exec_cmd([[notify-send -u critical "Noceasy bootstrap" "Plugin hyprpm faltando. Rode manualmente: ]] .. cmd .. [["]])
+  -- Fallback: notification if no terminal is available.
+  hl.exec_cmd([[notify-send -u critical "Noceasy bootstrap" "Plugin hyprpm missing. Run manually: ]] .. cmd .. ["]])
   return false
 end
 

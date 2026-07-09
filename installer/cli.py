@@ -11,8 +11,8 @@ Usage:
 
 Environment variables:
   NO_COLOR=1            Disable colored output (https://no-color.org/)
-  GABRLN_VERSION        Pin version (read by install.sh)
-  GABRLN_SHA256         Commit SHA to verify (read by install.sh)
+  NOCEASY_VERSION       Pin version (read by install.sh)
+  NOCEASY_SHA256        Commit SHA to verify (read by install.sh)
 
 Requires root (run via `sudo bash install.sh`).
 """
@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     # Install polkit policy
     setup_polkit_policy(real_user)
 
-    # Build pipeline of 16 modules
+    # Build pipeline of modules
     modules = build_default_pipeline()
     runner = ModuleRunner(
         modules=modules,
