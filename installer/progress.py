@@ -26,8 +26,34 @@ Everything else goes to the Live Output area.
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 from dataclasses import dataclass, field
+
+
+# ── Tokyo Night palette (https://github.com/enkia/tokyo-night-vscode-theme) ──
+
+TOKYO_NIGHT = {
+    "bg":          "#1a1b26",
+    "fg":          "#c0caf5",
+    "fg_dark":     "#a9b1d6",
+    "comment":     "#565f89",
+    "border":      "#7aa2f7",  # blue
+    "border_error": "#f7768e",  # red
+    "title":       "#bb9af7",  # magenta
+    "success":     "#9ece6a",  # green
+    "error":       "#f7768e",  # red
+    "warning":     "#e0af68",  # yellow
+    "cyan":        "#7dcfff",
+    "track":       "#3b4261",  # bar track (unfilled)
+}
+
+# Panel width: terminals are character cells, not pixels, so a literal
+# "900x900" box has no direct equivalent. We instead pick a fixed
+# column width that reads well (76 cols ≈ a squarish info box at
+# typical font aspect ratios) and center it in the available
+# terminal area, both horizontally and vertically.
+PANEL_WIDTH = 76
 
 
 # ── TTY detection (single source of truth) ───────────────────────────
@@ -124,18 +150,24 @@ class LivePanelRenderer:
 
     This is the only class that imports Rich. Everything else
     (ProgressState, MarkerParser, OutputCapture) is Rich-free.
+
+    Styling follows the Tokyo Night palette (see TOKYO_NIGHT).
     """
 
-    def __init__(self, state: ProgressState, progress) -> None:
+    def __init__(self, state: ProgressState, progress,
+                 width: int = PANEL_WIDTH) -> None:
         self._state = state
         self._progress = progress  # rich.progress.Progress or None
+        self._width = width
 
     def render(self):
-        """Return the Rich renderable for the current state."""
+        """Return the Rich renderable for the current state, centered."""
+        from rich.align import Align
         from rich.panel import Panel
         from rich.console import Group
         from rich.text import Text
 
+        c = TOKYO_NIGHT
         parts = []
 
         # Progress bar
@@ -145,26 +177,36 @@ class LivePanelRenderer:
 
         # Error banner
         if self._state.error:
-            parts.append(Text(f"✗ {self._state.error}", style="bold red"))
+            parts.append(Text(f"✗ {self._state.error}", style=f"bold {c['error']}"))
             parts.append("")
 
         # Command info
         if self._state.cmd:
-            parts.append(Text(f"$ {self._state.cmd}", style="dim"))
+            parts.append(Text(f"$ {self._state.cmd}", style=c["comment"]))
             parts.append("")
 
         # Live output (last 8 lines)
         if self._state.lines:
-            parts.append(Text("Live Output:", style="dim"))
+            parts.append(Text("Live Output:", style=c["comment"]))
             for line in self._state.lines:
-                parts.append(Text(f"  {line}"))
+                parts.append(Text(f"  {line}", style=c["fg_dark"]))
 
-        border = "red" if self._state.error else "cyan"
-        return Panel(
-            Group(*parts),
-            title=f"Noceasy Installer [dim]{self._state.module_idx}/{self._state.total_modules}[/dim]",
-            border_style=border,
+        border = c["border_error"] if self._state.error else c["border"]
+        title = (
+            f"[bold {c['title']}]Noceasy Installer[/bold {c['title']}] "
+            f"[{c['comment']}]{self._state.module_idx}/{self._state.total_modules}[/{c['comment']}]"
         )
+        panel = Panel(
+            Group(*parts),
+            title=title,
+            border_style=border,
+            width=self._width,
+            style=f"on {c['bg']}",
+        )
+        # Center horizontally AND vertically within the terminal.
+        # Requires the Live console to be in screen (alt-screen) mode
+        # so the full terminal height is available for centering.
+        return Align.center(panel, vertical="middle")
 
 
 # ── OutputCapture ────────────────────────────────────────────────────
@@ -243,6 +285,7 @@ class LiveDisplay:
         self._progress = None
         self._task_id = None
         self._final: list[str] = []
+        self._panel_width = PANEL_WIDTH
 
     # ── Lifecycle ───────────────────────────────────────────────────
 
@@ -266,20 +309,35 @@ class LiveDisplay:
         # pin the Console to that exact file handle.
         real_stdout = sys.stdout
         self._console = Console(file=real_stdout, force_terminal=True)
+
+        # Fit the panel to the terminal: cap at PANEL_WIDTH, but
+        # shrink on narrow terminals so it never overflows/wraps.
+        term_cols, _ = shutil.get_terminal_size(fallback=(PANEL_WIDTH + 4, 24))
+        self._panel_width = max(40, min(PANEL_WIDTH, term_cols - 4))
+
+        c = TOKYO_NIGHT
         self._progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[bold cyan]{task.description}"),
-            BarColumn(bar_width=30),
-            TextColumn("{task.percentage:>3.0f}%"),
-            TextColumn("({task.completed}/{task.total})"),
+            SpinnerColumn(style=c["border"]),
+            TextColumn(f"[{c['fg']}]{{task.description}}"),
+            BarColumn(bar_width=30, complete_style=c["border"],
+                     finished_style=c["success"], style=c["track"]),
+            TextColumn(f"[{c['comment']}]" + "{task.percentage:>3.0f}%"),
+            TextColumn(f"[{c['comment']}]" + "({task.completed}/{task.total})"),
             transient=False,
             console=self._console,
         )
+        # screen=True switches to the terminal's alternate screen
+        # buffer (like `vim`/`less`) — this is the Rich equivalent of
+        # Bubble Tea's tea.WithAltScreen(). Anything printed to the
+        # terminal before start() (e.g. install.sh's bash output)
+        # stays intact in the main buffer, hidden while the TUI is
+        # active, and reappears untouched once stop() restores it.
         self._live = Live(
             self._render(),
             console=self._console,
             refresh_per_second=12,
             transient=False,
+            screen=True,
         )
         self._live.start()
         # Force immediate render so the panel is visible
@@ -350,5 +408,7 @@ class LiveDisplay:
             self._state.task_total = self._progress.tasks[
                 self._task_id
             ].total if self._task_id is not None else 1
-        renderer = LivePanelRenderer(self._state, self._progress)
+        renderer = LivePanelRenderer(
+            self._state, self._progress, width=self._panel_width,
+        )
         return renderer.render()
