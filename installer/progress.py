@@ -28,6 +28,7 @@ from __future__ import annotations
 import os
 import shutil
 import sys
+import time
 from dataclasses import dataclass, field
 
 
@@ -35,6 +36,14 @@ from dataclasses import dataclass, field
 
 TOKYO_NIGHT = {
     "bg":          "#1a1b26",
+    # The panel's own interior background. Deliberately a shade or two
+    # LIGHTER than "bg" — most terminal themes already default to a
+    # near-black background close to #1a1b26, which makes the panel
+    # invisible except for its border in a screenshot/low-contrast
+    # display. bg_highlight (Tokyo Night's own name for this tone)
+    # reads as a clearly distinct "boxed" surface regardless of the
+    # terminal's default background.
+    "panel_bg":    "#292e42",
     "fg":          "#c0caf5",
     "fg_dark":     "#a9b1d6",
     "comment":     "#565f89",
@@ -175,29 +184,63 @@ class LivePanelRenderer:
         from rich.text import Text
 
         c = TOKYO_NIGHT
-        parts = []
 
-        # Progress bar
+        # ── Header: fixed number of rows regardless of state, so the
+        # scrolling output area below always starts at the same row.
+        # Rows not currently "in use" (e.g. no error, no cmd yet) are
+        # rendered as blank Text rows rather than omitted, so nothing
+        # shifts around as those fields fill in.
+        header: list = []
         if self._progress:
-            parts.append(self._progress)
-        parts.append("")
+            header.append(self._progress)
+        else:
+            header.append(Text(""))
+        header.append(Text(""))
 
-        # Error banner
         if self._state.error:
-            parts.append(Text(f"✗ {self._state.error}", style=f"bold {c['error']}"))
-            parts.append("")
+            header.append(Text(f"✗ {self._state.error}", style=f"bold {c['error']}",
+                                no_wrap=True, overflow="ellipsis"))
+        else:
+            header.append(Text(""))
+        header.append(Text(""))
 
-        # Command info
         if self._state.cmd:
-            parts.append(Text(f"$ {self._state.cmd}", style=c["comment"]))
-            parts.append("")
+            header.append(Text(f"$ {self._state.cmd}", style=c["comment"],
+                                no_wrap=True, overflow="ellipsis"))
+        else:
+            header.append(Text(""))
+        header.append(Text(""))
 
-        # Live output (last 8 lines — older lines scroll off as new
-        # ones arrive, keeping the box height fixed).
-        if self._state.lines:
-            parts.append(Text("Live Output:", style=f"bold {c['comment']}"))
-            for line in self._state.lines:
-                parts.append(Text(f"  {line}", style=c["fg_dark"]))
+        header.append(Text("Live Output:", style=f"bold {c['comment']}"))
+
+        # ── Scrolling output area: anchored to the BOTTOM border.
+        # Newest lines appear at the bottom; as more arrive, older
+        # ones are pushed up and eventually scroll off the TOP. When
+        # there isn't enough output yet to fill the area, blank rows
+        # pad the TOP (not the bottom) so content always "grows"
+        # upward from the bottom border, never leaving a dangling gap
+        # underneath the last line.
+        #
+        # The row budget is computed from the panel's own fixed
+        # height so the Group always has exactly (box_height - 2)
+        # rows — matching the panel's interior exactly, regardless of
+        # terminal size.
+        border_rows = 2  # panel's own top + bottom border lines
+        output_rows = max(1, self._box_height - border_rows - len(header))
+
+        visible = self._state.lines[-output_rows:]
+        pad = [Text("")] * (output_rows - len(visible))
+        # no_wrap + ellipsis: a long raw output line (build path, AUR
+        # command, ...) must occupy exactly ONE row. Without this, a
+        # single long line could wrap onto 2+ rows and silently break
+        # the fixed row budget the bottom-anchoring math above relies
+        # on, causing the panel to jitter/grow.
+        output = pad + [
+            Text(f"  {line}", style=c["fg_dark"], no_wrap=True, overflow="ellipsis")
+            for line in visible
+        ]
+
+        parts = header + output
 
         border = c["border_error"] if self._state.error else c["border"]
         title = (
@@ -205,16 +248,16 @@ class LivePanelRenderer:
             f"[{c['comment']}]{self._state.module_idx}/{self._state.total_modules}[/{c['comment']}]"
         )
         # style=fg-on-bg paints the WHOLE panel interior with the theme's
-        # dark background + light foreground, so it reads as a distinct
+        # panel background + light foreground, so it reads as a distinct
         # "boxed" area rather than just a colored border on the
-        # terminal's own (unstyled) background.
+        # terminal's own (unstyled, near-black) background.
         panel = Panel(
             Group(*parts),
             title=title,
             border_style=border,
             width=self._width,
             height=self._box_height,
-            style=f"{c['fg']} on {c['bg']}",
+            style=f"{c['fg']} on {c['panel_bg']}",
         )
         # Center horizontally AND vertically within the terminal.
         # Align needs an explicit height to center vertically —
@@ -235,19 +278,34 @@ class OutputCapture:
     ``LiveDisplay.refresh()`` so the panel is repainted immediately.
     """
 
+    # Lines beyond what the panel can show are trimmed at RENDER
+    # time (LivePanelRenderer only slices the last N that fit), so
+    # this cap is just a memory bound — generous enough that nothing
+    # visible is ever lost.
+    _MAX_RETAINED_LINES = 200
+
+    # Explicit refresh calls are throttled independently of Live's
+    # own refresh_per_second, so a flood of fast output (e.g. ninja
+    # logging one line per object file) can't spend all its time
+    # rebuilding Panel/Group objects instead of doing real work.
+    _MIN_REFRESH_INTERVAL = 0.05  # seconds
+
     def __init__(self, state: ProgressState, live: LiveDisplay | None = None) -> None:
         self._state = state
         self._live = live
         self._buf = b""
         self._in_write = False
+        self._last_refresh = 0.0
 
     def write(self, s) -> int:
         n = len(s) if isinstance(s, str) else 0
         if self._in_write:
             return n
         self._in_write = True
+        changed = False
         try:
-            self._buf += (s if isinstance(s, (str, bytes)) else str(s)).encode()
+            chunk = s if isinstance(s, str) else str(s)
+            self._buf += chunk.encode(errors="replace")
             while b"\n" in self._buf:
                 line, self._buf = self._buf.split(b"\n", 1)
                 decoded = line.decode(errors="replace").rstrip()
@@ -255,14 +313,23 @@ class OutputCapture:
                     continue
                 if not parse_marker(decoded, self._state):
                     self._state.lines.append(decoded)
-                    if len(self._state.lines) > 8:
-                        self._state.lines = self._state.lines[-8:]
-                # State is mutated; the Live refresh thread picks
-                # it up on the next tick (≤83 ms). No explicit
-                # refresh needed here — avoids re-entrancy with
-                # Live's own render loop.
+                    if len(self._state.lines) > self._MAX_RETAINED_LINES:
+                        self._state.lines = self._state.lines[-self._MAX_RETAINED_LINES:]
+                changed = True
         finally:
             self._in_write = False
+        # NOTE: mutating self._state alone is NOT enough to update the
+        # panel. rich.live.Live's background thread only re-draws
+        # whatever renderable was last passed to Live.update() — it
+        # does not re-invoke our render() function on its own. Without
+        # this explicit refresh, the panel stays frozen at whatever it
+        # looked like when the module started, until finish()/fail()
+        # is called at the very end.
+        if changed and self._live is not None:
+            now = time.monotonic()
+            if now - self._last_refresh >= self._MIN_REFRESH_INTERVAL:
+                self._last_refresh = now
+                self._live.refresh()
         return n
 
     def flush(self) -> None:

@@ -65,32 +65,43 @@ def _install_streamed(cmd: list[str], user: str) -> bool:
         assert proc.stdout is not None
         for line in proc.stdout:
             line = line.rstrip()
+            if not line:
+                continue
 
             if line.startswith("==>") and "Making package:" in line:
                 current_pkg = line.split("Making package:")[1].split()[0]
                 print(f"@STEP:Building {current_pkg}")
                 print(f"@CMD:yay -S --needed --noconfirm --removemake {current_pkg}")
+                print(line)
                 last_update = time.monotonic()
                 continue
 
-            if not current_pkg:
-                continue
-
             now = time.monotonic()
-            if now - last_update < _STEP_UPDATE_INTERVAL:
-                continue
 
+            # CMake/Ninja emit one progress line per compiled object —
+            # too fast to print raw (would flood the scrolling log and
+            # spend all our time re-rendering). Fold those into the
+            # throttled @STEP marker instead of forwarding them as-is.
             m_cmake = _CMAKE_PCT_RE.match(line)
-            if m_cmake:
-                print(f"@STEP:Building {current_pkg} ({m_cmake.group(1)}%)")
-                last_update = now
+            if m_cmake and current_pkg:
+                if now - last_update >= _STEP_UPDATE_INTERVAL:
+                    print(f"@STEP:Building {current_pkg} ({m_cmake.group(1)}%)")
+                    last_update = now
                 continue
 
             m_ninja = _NINJA_STEP_RE.match(line)
-            if m_ninja:
-                done, total = m_ninja.groups()
-                print(f"@STEP:Building {current_pkg} ({done}/{total})")
-                last_update = now
+            if m_ninja and current_pkg:
+                if now - last_update >= _STEP_UPDATE_INTERVAL:
+                    done, total = m_ninja.groups()
+                    print(f"@STEP:Building {current_pkg} ({done}/{total})")
+                    last_update = now
+                continue
+
+            # Everything else (==> Retrieving sources..., pacman/makepkg
+            # messages, etc.) is real signal — forward it so the Live
+            # Output area actually shows what's happening instead of
+            # sitting empty for the whole build.
+            print(line)
     except (OSError, ValueError):
         pass
     return proc.wait() == 0
