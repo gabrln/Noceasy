@@ -37,7 +37,7 @@ alias ninja="ninja -j\$(nproc)"
 alias conf-hypr="nvim ~/.config/hypr/hyprland.lua"
 alias conf-zsh="nvim ~/.config/zsh/.zshrc"
 alias conf-kitty="nvim ~/.config/kitty/kitty.conf"
-alias install-setup="~/projects/Arch-gabrln/install.sh"
+alias install-setup="~/projects/Noceasy/install.sh"
 alias reload-zsh="source ~/.config/zsh/.zshrc && echo 'Zsh config reloaded!'"
 
 alias g="git"
