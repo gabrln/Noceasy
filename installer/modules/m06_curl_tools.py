@@ -81,7 +81,7 @@ class CurlToolsModule(Module):
             chown_user(log_file, ctx.real_user)
 
             # Write the wrapper script (avoids shell interpolation of URL)
-            wrapper = Path(tempfile.mkstemp(prefix="gabrln-curl-", suffix=".sh")[1])
+            wrapper = Path(tempfile.mkstemp(prefix="noceasy-curl-", suffix=".sh")[1])
             wrapper.chmod(0o700)
             wrapper.write_text(
                 "#!/usr/bin/env bash\n"

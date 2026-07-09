@@ -167,7 +167,7 @@ def restore(label: str) -> bool:
             continue
 
         # Atomic restore: copy to staging, then rm + mv
-        staging = Path(tempfile.mkdtemp(prefix="gabrln-restore-"))
+        staging = Path(tempfile.mkdtemp(prefix="noceasy-restore-"))
         try:
             shutil.copytree(item, staging / target.name)
             target.parent.mkdir(parents=True, exist_ok=True)

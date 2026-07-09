@@ -58,7 +58,7 @@ def _print_help_header() -> None:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="installer",
-        description="Arch-gabrln installer framework (Python port).",
+        description="Noceasy installer framework.",
         add_help=False,
     )
     p.add_argument("-h", "--help", action="store_true")
@@ -92,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         os.environ["NO_COLOR"] = "1"
     setup_logging(log_dir=LOGS_DIR, level=level)
 
-    log("step", f"Arch-gabrln installer v{__version__}")
+    log("step", f"Noceasy installer v{__version__}")
     log("info", f"REPO_DIR: {REPO_DIR}")
     log("info", f"INSTALLER_DIR: {INSTALLER_DIR}")
 
@@ -123,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         fatal(f"Installer failed: {exc}")
 
-    log("success", "Arch-gabrln installation completed successfully.")
+    log("success", "Noceasy installation completed successfully.")
     return 0
 
 

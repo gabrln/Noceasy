@@ -62,7 +62,7 @@ class KeyringModule(Module):
         log("info", "Checking gnome-keyring integration in greetd...")
 
         # Backup once (so we can restore if our edit breaks PAM)
-        bak = PAM_FILE.with_suffix(PAM_FILE.suffix + ".gabrln.bak")
+        bak = PAM_FILE.with_suffix(PAM_FILE.suffix + ".noceasy.bak")
         if not bak.exists():
             shutil.copy2(PAM_FILE, bak)
             bak.chmod(0o600)
