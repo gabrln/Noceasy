@@ -1,221 +1,141 @@
 # Framework de instalação — guia do contribuidor
 
-Esta documentação descreve como o framework `gabrln` funciona internamente
-e como adicionar/modificar módulos.
+Documentação interna do framework Python (`installer/`).
+Para uso normal, leia o `README.md` da raiz.
 
 ## Visão geral
 
 ```
-curl | sudo bash install.sh
-   ↓
-install.sh (bootstrap)
-   ↓ clone/pull + chown
-   ↓
-exec installer/gabrln
-   ↓
-source lib/{logger,utils,errors,state,backup,progress}.sh
-   ↓
-setup_traps → detect_real_user → setup_polkit_policy → init_framework
-   ↓
-for module in MODULES[]: run_module "$name" "$manifest"
-   ↓ (cada módulo é sourced e compartilha o shell)
-   ↓
-progress_done → log_success
-   ↓
-trap EXIT → run_cleanup (polkit rules + toml cache)
+install.sh (bash, ~140 linhas)
+  └─ detecção de arch, OS, python, rich
+  └─ git clone/pull com GABRLN_VERSION + GABRLN_SHA256
+  └─ exec python3 -m installer
+
+python3 -m installer
+  └─ cli.py: parse flags
+  └─ logger.py: setup logging
+  └─ errors.py: signal traps, cleanup
+  └─ privilege.py: detect_real_user, setup_polkit_policy
+  └─ runner.py: ModuleRunner
+       └─ for module in build_default_pipeline():
+            ├─ state.is_up_to_date? → skip
+            ├─ --dry-run? → log step, return
+            └─ module.run(ctx) + state.mark_done
 ```
 
 ## Bibliotecas
 
-Todas as bibliotecas usam o guard `_LIB_*_SH=1` para evitar re-source.
-
-### `lib/logger.sh`
-
-Logging estruturado. Toda função grava no `LOG_FILE` e imprime colorido no TTY.
-
-```bash
-log_init <dir>            # cria <dir>/gabrln-TS.log
-log_info|warn|error|success|step|debug|cmd "msg"
-```
-
-Honra: `NO_COLOR`, `TERM=dumb`, `-t 1 && -t 2`, `QUIET`, `VERBOSE`.
-
-### `lib/utils.sh`
-
-Helpers genéricos. Os mais usados pelos módulos:
-
-```bash
-detect_real_user                # exige root + SUDO_USER; seta REAL_USER/USER_HOME
-run_as_user "cmd"               # runuser -u REAL_USER -- bash -lc "cmd"
-run_as_user_fast "cmd"          # runuser -u REAL_USER -- bash -c "cmd" (sem login shell)
-is_command <bin>                # command -v
-has_internet                    # curl -fsSI https://github.com
-has_free_space [min_bytes]      # df -B1 em $USER_HOME e /
-toml_get <file> <key> [default]   # valor único, com cache
-toml_list <file> <key>            # lista de strings, sem cache
-toml_list_get <file> <key> <field> # campo específico de uma lista de tabelas
-chown_user_path <path>          # mkdir + chown do user real
-pkg_installed <pkg>             # pacman -Q
-systemd_unit_exists <unit>      # systemctl list-unit-files
-cachyos_installed_kernels       # lista linux-cachyos* instalados
-```
-
-### `lib/errors.sh`
-
-```bash
-setup_traps                       # registra ERR/EXIT/INT/TERM/HUP
-run_cleanup                       # itera _CLEANUP_HOOKS
-register_cleanup "cmd"            # adiciona hook
-exit_with_error "msg" [code]      # log_error + run_cleanup + exit
-is_benign_exit <code>             # 1, 2, 3, 64, 130, 141 são benignos
-setup_polkit_policy               # instala rules + policy + gabrln-helper
-```
-
-### `lib/state.sh`
-
-`state.json` é escrito atomicamente (temp file + `os.replace`) e serializado
-com `flock` (5s timeout). Permissões 0600.
-
-```bash
-state_init <dir>                  # cria state.json (vazio se não existe)
-state_is_up_to_date <mod> [manifest]  # 0 se já done com mesmo hash
-state_mark_done <mod> [manifest]       # status=done + manifest_hash + ts
-state_mark_failed <mod> <reason>       # status=failed (debug)
-state_get|set <mod> <field> [value]    # acesso granular
-state_clear <mod>                       # remove entrada
-```
-
-### `lib/backup.sh`
-
-Snapshots com timestamp. `backup_create` retorna o nome em stdout (logs em
-stderr), então use `name=$(backup_create "label" paths...)`.
-
-```bash
-backup_init <dir>                # mkdir, lê flags.max_backups
-backup_create <label> <paths...> # copia com colisão .1/.2, retenção
-backup_list                      # snapshots existentes (mais recente primeiro)
-backup_restore <label>           # interativo, restore atômico via staging
-```
-
-### `lib/progress.sh`
-
-Barra de progresso TTY-aware.
-
-```bash
-progress_init <total> [label]    # label vira prefixo "[label]"
-progress_step "msg"              # avança e loga
-progress_done ["msg"]            # log_success "msg (N/TOTAL)"
-```
+| Arquivo | Responsabilidade |
+|---|---|
+| `cli.py` | argparse, main(), help |
+| `config.py` | Paths (REPO_DIR, INSTALLER_DIR, etc), loader de config.toml |
+| `logger.py` | Rich-based logging com NO_COLOR, TTY, níveis |
+| `errors.py` | `fatal()`, `install_signal_handlers()`, cleanup hooks |
+| `privilege.py` | `run_as_user`, `detect_real_user`, `setup_polkit_policy`, `cleanup_polkit_policy` |
+| `toml_cache.py` | `TomlCache` em memória (chamado 1x por manifesto) |
+| `state.py` | `State` (state.json com flock + os.replace atômico) |
+| `backup.py` | `create`, `restore`, `list_snapshots`, retenção |
+| `progress.py` | `make_progress` (Rich Progress TTY-aware) |
+| `runner.py` | `ModuleRunner` (loop de 16 módulos) |
 
 ## Como adicionar um módulo
 
-1. Criar `installer/modules/NN-nome.sh` (NN = próximo número livre).
-2. Adicionar em `MODULES=()` no `installer/gabrln`:
-   ```bash
-   "NN-nome"                  # sem manifesto
-   "NN-nome:manifesto.toml"   # com manifesto (cache por hash)
-   ```
-3. O módulo é `source`d (não executado), então herda `set -e`, todas as
-   vars exportadas, e funções de todas as libs.
+1. Criar `installer/modules/mNN_nome.py` com uma classe que herda de `Module`.
+2. Adicionar a classe em `build_default_pipeline()` em `installer/modules/__init__.py`.
+3. Se o módulo lê um manifesto, declare `manifest = "nome.toml"` na classe.
 
 ### Esqueleto de módulo
 
-```bash
-#!/usr/bin/env bash
-# NN-nome.sh - Descrição curta
+```python
+from installer.modules.base import Module, RunContext
+from installer.logger import log
 
-log_info "Iniciando ..."
+class MyModule(Module):
+    name = "NN-my-module"
+    manifest = "my-manifest.toml"  # opcional
 
-# Pré-condições
-if ! is_command algumacoisa; then
-  log_warn "algumacoisa não está instalado. Pulando."
-  return 0
-fi
-
-# Trabalho principal
-run_as_user "comando como usuario"
-
-# Sucesso — return 0 implícito
-log_success "Módulo concluído."
+    def run(self, ctx: RunContext) -> None:
+        log("info", "Iniciando ...")
+        # ctx.real_user, ctx.user_home, ctx.state
+        # raise Exception em caso de erro
+        log("success", "Concluído.")
 ```
 
 **Convenções:**
-- Use `log_*` para output (nunca `echo` direto).
-- Use `run_as_user` para comandos que precisam de UID do user.
-- Use `run_as_user_fast` para evitar o overhead de login shell.
-- Use `chown_user_path` em vez de `chown -R` em paths do user.
-- Se o módulo tem manifesto, edite o manifesto — o hash é a chave de cache.
-- Se o módulo não tem side-effects perigosos, considere suportar `--dry-run`
-  via `[[ "$DRY_RUN" -eq 1 ]]` e `return 0`.
+- Use `log("info"|"warn"|"error"|"success"|"step"|"debug", msg)`.
+- Use `ctx.real_user` em vez de `os.environ["SUDO_USER"]`.
+- Use `is_command()`, `pkg_installed()`, `systemd_unit_exists()` para checks.
+- Use `run_as_user(cmd, user=ctx.real_user)` para drop de privilégio.
+- Se o módulo tem side-effects perigosos, use o flag `--dry-run` via `self.dry_run` (ou apenas skip com `return` em `pre_check`).
+- O state (skip-if-done) é gerenciado pelo `Runner` automaticamente baseado no `manifest`.
 
 ## Como adicionar um manifesto
 
 1. Criar `installer/manifests/nome.toml` com a estrutura que fizer sentido.
-2. No módulo, ler via `toml_get` / `toml_list` / `toml_list_get`.
-3. Adicionar o path em `MODULES=()` com `:nome.toml`.
+2. No módulo, ler via `get_cache().get(...)`, `get_list(...)`, `get_list_field(...)`.
+
+```python
+from installer.toml_cache import get_cache
+data = get_cache().load("nome.toml")
+pkgs = get_cache().get_list_field("nome.toml", "packages", "name")
+val = get_cache().get("nome.toml", "section.key", default=None)
+```
 
 ## Polkit policy
 
-A polkit policy é renderizada a partir de templates em `installer/polkit/`:
+Templates em `installer/polkit/`:
 
-- `99-arch-gabrln-installer.rules` — regra JS (`@REAL_USER@` é substituído).
+- `99-arch-gabrln-installer.rules` — regra JS (renderizada com `@REAL_USER@` substituído).
 - `org.archlinux.pkexec.gabrln.policy` — metadata da action.
 - `gabrln-helper` — binary em `/usr/local/bin/` invocado via `pkexec`.
 
-`gabrln-helper` aceita:
+`gabrln-helper` aceita subcomandos: `refresh-icon-cache`, `update-hyprpm`, `enable-service`, `restart-user-service`, `set-shell`.
+
+Para adicionar um subcomando, edite `installer/polkit/gabrln-helper` e adicione um novo `case` no dispatch.
+
+## Validação
 
 ```bash
-pkexec gabrln-helper refresh-icon-cache
-pkexec gabrln-helper update-hyprpm
-pkexec gabrln-helper enable-service <unit>
-pkexec gabrln-helper restart-user-service <unit>
-pkexec gabrln-helper set-shell <user> [shell]
-```
+# Sintaxe Python
+python3 -c "import ast, pathlib; [ast.parse(p.read_text()) for p in pathlib.Path('installer').rglob('*.py')]"
 
-Para adicionar um subcomando, edite `installer/polkit/gabrln-helper` e
-adicione um novo `case` no dispatch.
+# Help
+NO_COLOR=1 python3 -m installer --help
 
-## Testes
+# Verificar pipeline
+PYTHONPATH=./_mock python3 -c "from installer.modules import build_default_pipeline; print(len(build_default_pipeline()))"
 
-Validar sintaxe:
-```bash
-for f in installer/gabrln installer/lib/*.sh installer/modules/*.sh install.sh installer/polkit/gabrln-helper; do
-  bash -n "$f" || echo "FAIL: $f"
-done
-```
-
-Validar help:
-```bash
-NO_COLOR=1 ./installer/gabrln --help
-```
-
-Dry-run sem root falha (esperado):
-```bash
-NO_COLOR=1 ./installer/gabrln --dry-run
-# → [ERROR] Este comando deve ser executado com sudo.
-```
-
-Dry-run com root (precisa de sudo sem senha):
-```bash
-sudo NO_COLOR=1 ./installer/gabrln --dry-run
-# → simula os 16 módulos
+# Dry-run (precisa root)
+NO_COLOR=1 sudo python3 -m installer --dry-run
 ```
 
 ## Fluxo de erro
 
 ```
-módulo falha (exit != 0)
+módulo.run() raise Exception
   ↓
-run_module captura rc
+Runner captura, state.mark_failed()
   ↓
-state_mark_failed <mod> "exit <rc>"
+errors.fatal("Módulo X falhou: ...")
   ↓
-exit_with_error "Módulo <mod> falhou..."
+run_cleanup() (polkit rules + log file close)
   ↓
-run_cleanup (polkit rules + toml cache)
-  ↓
-exit 1
+sys.exit(1)
 ```
 
-`trap ERR _error_handler` em `errors.sh` filtra exit codes benignos
-(1, 2, 3, 64, 130, 141) para não rodar cleanup pesado em falso positivo.
+`is_benign_exit(code)` em `errors.py` filtra exit codes benignos (1, 2, 3, 64, 130, 141) que não devem disparar cleanup pesado.
+
+## Migrando do bash
+
+Se você está portando um módulo bash para Python:
+
+| Bash | Python |
+|---|---|
+| `log_info "msg"` | `log("info", "msg")` |
+| `log_warn "msg"` | `log("warn", "msg")` |
+| `is_command x` | `is_command("x")` (from `mixins`) |
+| `pacman -Q x` | `pkg_installed("x")` |
+| `run_as_user "cmd"` | `run_as_user("cmd", user=ctx.real_user)` |
+| `toml_get f k default` | `get_cache().get("f.toml", "k", default)` |
+| `state_mark_done m` | (automático no `Runner`) |
+| `exit_with_error "msg"` | `raise Exception("msg")` |
