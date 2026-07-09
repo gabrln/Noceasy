@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
@@ -65,32 +66,35 @@ def _setup_askpass(sudo_password: str | None) -> dict[str, str]:
     if sudo_password is None:
         return env
 
-    # Create with restrictive permissions atomically (no race window
-    # between creation and chmod).
-    fd = os.open(
-        "/tmp/.noceasy-askpass.sh",
-        os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-        0o700,
+    # Create with restrictive permissions and random name atomically.
+    # mkstemp() uses O_CREAT|O_EXCL internally — fails if path
+    # already exists (prevents symlink confused-deputy attacks on
+    # a fixed /tmp path), and generates a random suffix.
+    fd, askpass_path = tempfile.mkstemp(
+        prefix=".noceasy-askpass-", suffix=".sh", dir="/tmp",
     )
     try:
         os.write(fd, b"#!/bin/sh\nprintf '%s\\n' \"$SUDO_ASKPASS_PW\"\n")
     finally:
         os.close(fd)
+    os.chmod(askpass_path, 0o700)
 
     # Pass password via env var — the script reads it from there,
     # never from its own text. Prevents shell injection even if
     # the password contains quotes, semicolons, backticks, etc.
-    env["SUDO_ASKPASS"] = "/tmp/.noceasy-askpass.sh"
+    env["SUDO_ASKPASS"] = askpass_path
     env["SUDO_ASKPASS_PW"] = sudo_password
     return env
 
 
 def _teardown_askpass() -> None:
-    """Remove the temporary SUDO_ASKPASS script."""
-    try:
-        Path("/tmp/.noceasy-askpass.sh").unlink(missing_ok=True)
-    except OSError:
-        pass
+    """Remove any leftover SUDO_ASKPASS scripts from /tmp."""
+    import glob as _glob
+    for f in _glob.glob("/tmp/.noceasy-askpass-*.sh"):
+        try:
+            Path(f).unlink()
+        except OSError:
+            pass
 
 
 def _install_streamed(cmd: list[str], sudo_password: str | None) -> bool:
