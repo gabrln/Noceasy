@@ -36,7 +36,7 @@ local function open_terminal_with(cmd)
     end
   end
   -- Fallback: notificacao. O usuario roda manualmente.
-  hl.exec([[notify-send -u critical "Arch-gabrln bootstrap" "Plugin hyprpm faltando. Rode manualmente: ]] .. cmd .. [["]])
+  hl.exec([[notify-send -u critical "Noceasy bootstrap" "Plugin hyprpm faltando. Rode manualmente: ]] .. cmd .. [["]])
   return false
 end
 
