@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import os
-import tempfile
+import subprocess
 from pathlib import Path
 
 from installer.config import YAY_CHUNK_SIZE
@@ -35,35 +34,43 @@ def _pacman_missing(pkgs: list[str]) -> list[str]:
     return out.stdout.strip().split() if out.stdout else []
 
 
+def _install_streamed(cmd: list[str], user: str) -> bool:
+    """Run a command as the real user, streaming filtered output in real-time."""
+    argv = ["runuser", "-u", user, "--", *cmd]
+    proc = subprocess.Popen(
+        argv,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    try:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            line = line.rstrip()
+            if any(line.startswith(p) for p in _INTERESTING_PREFIXES):
+                log("info", f"  {line}")
+    except (OSError, ValueError):
+        pass
+    return proc.wait() == 0
+
+
 def _install_chunk(chunk: list[str], user: str) -> bool:
     """Install one chunk of AUR packages. Returns True on success."""
-    proc = run_as_user(
-        ["bash", "-c",
-         "printf '%s\\n' \"$@\" | xargs yay -S "
-         "--needed --noconfirm --removemake",
-         "bash", *chunk],
-        user=user, login=False, check=False, capture=True,
-    )
-    _show_build_output(proc)
-    return proc.returncode == 0
+    argv = [
+        "bash", "-c",
+        "printf '%s\\n' \"$@\" | xargs yay -S "
+        "--needed --noconfirm --removemake",
+        "bash", *chunk,
+    ]
+    return _install_streamed(argv, user)
 
 
 def _install_one(pkg: str, user: str) -> bool:
-    proc = run_as_user(
+    return _install_streamed(
         ["yay", "-S", "--needed", "--noconfirm", "--removemake", pkg],
-        user=user, login=False, check=False, capture=True,
+        user,
     )
-    _show_build_output(proc)
-    return proc.returncode == 0
-
-
-def _show_build_output(proc) -> None:
-    """Extract and display interesting lines from yay's captured output."""
-    output = (proc.stdout or "") + (proc.stderr or "")
-    for line in output.splitlines():
-        line = line.rstrip()
-        if any(line.startswith(p) for p in _INTERESTING_PREFIXES):
-            log("info", f"  {line}")
 
 
 def _grant_pacman_nopasswd(user: str) -> None:
@@ -74,13 +81,11 @@ def _grant_pacman_nopasswd(user: str) -> None:
     removed after the build (or on any exit path).
     """
     if _SUDOERS_NOCEASY.is_file():
-        return  # already granted
+        return
     try:
         _SUDOERS_NOCEASY.write_text(_SUDOERS_CONTENT.format(user=user))
         _SUDOERS_NOCEASY.chmod(0o440)
-        # Validate the syntax before activating.
-        visudo = run(["visudo", "-cf", str(_SUDOERS_NOCEASY)],
-                     timeout=5)
+        visudo = run(["visudo", "-cf", str(_SUDOERS_NOCEASY)], timeout=5)
         if visudo.returncode != 0:
             log("warn", f"sudoers validation failed: {visudo.stderr.strip()}")
             _SUDOERS_NOCEASY.unlink(missing_ok=True)
