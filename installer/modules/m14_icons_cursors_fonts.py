@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import subprocess
-from pathlib import Path
-
+from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import chown_user, is_command
@@ -16,8 +14,7 @@ class IconsCursorsFontsModule(Module):
 
     def run(self, ctx: RunContext) -> None:
         log("info", "Updating font cache...")
-        subprocess.run(["fc-cache", "-fv"], check=False, capture_output=True,
-                        timeout=120)
+        run(["fc-cache", "-fv"], timeout=120)
 
         log("info", "Ensuring user icons directory...")
         icons_dir = ctx.user_home / ".local" / "share" / "icons"

@@ -33,13 +33,9 @@ def is_command_user(name: str, user: str) -> bool:
 
 def has_internet() -> bool:
     """True if github.com is reachable."""
-    try:
-        return subprocess.run(
-            ["curl", "-fsSI", "--max-time", "5", "https://github.com"],
-            check=False, capture_output=True, timeout=10,
-        ).returncode == 0
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return False
+    from installer.exec import run
+    return run(["curl", "-fsSI", "--max-time", "5", "https://github.com"],
+                timeout=10).returncode == 0
 
 
 def has_free_space(paths: Sequence[Path],
@@ -64,32 +60,22 @@ def has_free_space(paths: Sequence[Path],
 
 def pkg_installed(pkg: str) -> bool:
     """True if `pkg` is installed via pacman."""
-    try:
-        return subprocess.run(
-            ["pacman", "-Q", pkg],
-            check=False, capture_output=True,
-        ).returncode == 0
-    except FileNotFoundError:
-        return False
+    from installer.exec import run
+    return run(["pacman", "-Q", pkg]).returncode == 0
 
 
 def systemd_unit_exists(unit: str) -> bool:
     """True if the systemd unit file is known."""
-    try:
-        return subprocess.run(
-            ["systemctl", "list-unit-files", unit],
-            check=False, capture_output=True,
-        ).returncode == 0
-    except FileNotFoundError:
-        return False
+    from installer.exec import run
+    return run(["systemctl", "list-unit-files", unit]).returncode == 0
 
 
 def chown_user(path: Path, user: str) -> None:
     """chown -R `path` to `user:user`. Creates the path if missing."""
+    from installer.exec import run
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["chown", "-R", f"{user}:{user}", str(path)],
-                    check=False, capture_output=True)
+    run(["chown", "-R", f"{user}:{user}", str(path)])
 
 
 def chown_user_path(path: Path, user: str) -> None:

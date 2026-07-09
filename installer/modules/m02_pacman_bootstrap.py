@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import subprocess
-
 from installer.errors import fatal
+from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import is_command, pkg_installed
@@ -16,27 +15,21 @@ class PacmanBootstrapModule(Module):
 
     def run(self, ctx: RunContext) -> None:
         log("info", "Syncing pacman database...")
-        subprocess.run(["pacman", "-Sy"], check=False, capture_output=True)
+        run(["pacman", "-Sy"])
 
         log("info", "Ensuring bootstrap packages...")
         pkgs = [p for p in
                 get_cache().get_list("config.toml", "install.bootstrap_packages")
                 if p]
         if pkgs:
-            subprocess.run(
-                ["pacman", "-S", "--needed", "--noconfirm", *pkgs],
-                check=False, capture_output=True,
-            )
+            run(["pacman", "-S", "--needed", "--noconfirm", *pkgs])
 
         log("info", "Ensuring yay (AUR helper)...")
         if pkg_installed("yay"):
             log("success", "yay is already installed.")
         else:
             log("warn", "yay not found. Installing via pacman (cachyos repo)...")
-            if subprocess.run(
-                ["pacman", "-S", "--needed", "--noconfirm", "yay"],
-                check=False,
-            ).returncode != 0:
+            if run(["pacman", "-S", "--needed", "--noconfirm", "yay"]).returncode != 0:
                 fatal("Failed to install yay. Check [cachyos] in /etc/pacman.conf.")
 
         if not is_command("yay"):

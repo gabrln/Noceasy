@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import shutil
-import subprocess
 from pathlib import Path
 from typing import List
 
 from installer.errors import fatal
+from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.toml_cache import get_cache
@@ -18,15 +18,9 @@ _CRITICAL_PACKAGES = {"zsh", "base", "base-devel", "git"}
 
 def _cachyos_present() -> bool:
     """True if the system is CachyOS (kernel installed or repo enabled)."""
-    try:
-        out = subprocess.run(
-            ["pacman", "-Qq"],
-            check=True, capture_output=True, text=True, timeout=10,
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError,
-            subprocess.TimeoutExpired):
-        return False
-    if any(p.startswith("linux-cachyos") for p in out.stdout.split()):
+    out = run(["pacman", "-Qq"], timeout=10)
+    if out.returncode == 0 and any(
+            p.startswith("linux-cachyos") for p in out.stdout.split()):
         return True
     conf = Path("/etc/pacman.conf")
     if conf.is_file():
@@ -35,14 +29,8 @@ def _cachyos_present() -> bool:
 
 
 def _pacman_missing(pkgs: List[str]) -> List[str]:
-    try:
-        out = subprocess.run(
-            ["pacman", "-T", *pkgs],
-            check=False, capture_output=True, text=True,
-        )
-        return out.stdout.strip().split()
-    except FileNotFoundError:
-        return []
+    out = run(["pacman", "-T", *pkgs])
+    return out.stdout.strip().split() if out.stdout else []
 
 
 def _which(name: str) -> bool:
@@ -74,14 +62,10 @@ class PacmanOfficialModule(Module):
             return
 
         log("info", f"Installing missing official packages: {' '.join(missing)}")
-        if subprocess.run(
-            ["pacman", "-S", "--needed", "--noconfirm", *missing],
-            check=False,
-        ).returncode != 0:
+        if run(["pacman", "-S", "--needed", "--noconfirm", *missing]).returncode != 0:
             log("warn", "pacman returned an error. Trying one by one...")
             for pkg in missing:
-                subprocess.run(["pacman", "-S", "--needed", "--noconfirm", pkg],
-                                check=False, capture_output=True)
+                run(["pacman", "-S", "--needed", "--noconfirm", pkg])
 
         still_missing = _pacman_missing(missing)
         if still_missing:

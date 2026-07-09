@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import subprocess
 from typing import List
 
+from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import systemd_unit_exists
@@ -31,8 +31,7 @@ class ServicesModule(Module):
                 log("warn", f"  -> {svc} (unit not found, skipping)")
                 skipped += 1
                 continue
-            if subprocess.run(["systemctl", "enable", svc],
-                                check=False, capture_output=True).returncode == 0:
+            if run(["systemctl", "enable", svc]).returncode == 0:
                 log("info", f"  -> {svc} enabled")
                 enabled += 1
             else:
