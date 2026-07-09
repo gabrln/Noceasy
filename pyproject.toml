@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "arch-gabrln-installer"
+name = "noceasy-installer"
 version = "0.1.0"
-description = "Installer framework for Arch-gabrln (Hyprland + Noctalia v5)"
+description = "Noceasy: fast Noctalia v5 installer for Arch/CachyOS"
 requires-python = ">=3.11"
 dependencies = [
     "rich>=13.7",
@@ -14,7 +14,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["installer*"]
-exclude = ["installer.lib*", "installer.modules.shell*"]
 
 [tool.setuptools.package-data]
 "installer" = ["manifests/*.toml", "polkit/*"]

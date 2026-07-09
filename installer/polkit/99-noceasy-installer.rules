@@ -1,0 +1,13 @@
+/* Noceasy installer — polkit rule
+ *
+ * Auto-approves REAL_USER to invoke noceasy-helper via pkexec
+ * without re-auth. Installed at /etc/polkit-1/rules.d/ by the
+ * installer, removed on framework EXIT.
+ */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.archlinux.pkexec.noceasy" &&
+        subject.user == "@REAL_USER@" &&
+        subject.local && subject.active) {
+        return polkit.Result.YES;
+    }
+});

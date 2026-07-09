@@ -6,8 +6,8 @@ use `runuser`, which is part of `util-linux` and is always present
 on Arch.
 
 Polkit policy:
-    - Installs /etc/polkit-1/rules.d/99-arch-gabrln-installer.rules
-      authorizing REAL_USER to run `gabrln-helper` via pkexec
+    - Installs /etc/polkit-1/rules.d/99-noceasy-installer.rules
+      authorizing REAL_USER to run `noceasy-helper` via pkexec
       without re-auth.
     - Copied from installer/polkit/* on disk.
     - Removed on exit (see cleanup_polkit_policy).
@@ -147,7 +147,7 @@ def setup_polkit_policy(real_user: str) -> None:
     # 1. Rules file (auto-approve REAL_USER for our action)
     try:
         POLKIT_RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        template = (POLKIT_DIR / "99-arch-gabrln-installer.rules").read_text()
+        template = (POLKIT_DIR / "99-noceasy-installer.rules").read_text()
         rendered = template.replace("@REAL_USER@", real_user)
         POLKIT_RULES_PATH.write_text(rendered)
         POLKIT_RULES_PATH.chmod(0o644)
@@ -157,7 +157,7 @@ def setup_polkit_policy(real_user: str) -> None:
 
     # 2. Policy file (only if missing)
     if not POLKIT_POLICY_PATH.exists():
-        src = POLKIT_DIR / "org.archlinux.pkexec.gabrln.policy"
+        src = POLKIT_DIR / "org.archlinux.pkexec.noceasy.policy"
         if src.is_file():
             try:
                 POLKIT_POLICY_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -168,13 +168,13 @@ def setup_polkit_policy(real_user: str) -> None:
 
     # 3. Helper binary (only if missing)
     if not POLKIT_HELPER_PATH.exists():
-        src = POLKIT_DIR / "gabrln-helper"
+        src = POLKIT_DIR / "noceasy-helper"
         if src.is_file():
             try:
                 shutil.copy2(src, POLKIT_HELPER_PATH)
                 POLKIT_HELPER_PATH.chmod(0o755)
             except OSError as exc:
-                log("warn", f"Could not install gabrln-helper: {exc}")
+                log("warn", f"Could not install noceasy-helper: {exc}")
 
     _polkit_installed = True
     log("info", f"Polkit policy installed for {real_user}.")

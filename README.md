@@ -1,35 +1,22 @@
-# Arch-gabrln
+# Noceasy
 
-Ambiente Wayland para Arch/CachyOS: **Hyprland 0.55 + Noctalia V5**.
+Fast installer for Noctalia v5 (Hyprland/Qt6 shell) on Arch/CachyOS.
 
-## Instalação
+## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Noceasy/main/install.sh | sudo bash
 ```
 
-Requer Arch ou CachyOS. Roda 16 módulos em ordem, configura o sistema
-completo, e sai.
+## Problems
 
-## Atalhos principais
-
-- `Super + T` — Terminal (Kitty)
-- `Super + D` — Launcher
-- `Alt + Tab` — Overview (hyprpm scrolloverview)
-- `Super + B` — Firefox
-- `Super + /` — Cheat sheet completo
-- `Super + Q` — Fechar janela
-
-## Problemas comuns
-
-| Sintoma | Solução |
+| Error | Fix |
 |---|---|
-| `Distribuição não suportada` | Apenas Arch e CachyOS são suportados |
-| `Python 3.11+ necessário` | `pacman -S python` (Arch já tem 3.12+) |
-| `python-rich não encontrado` | `pacman -S python-rich` |
-| `pacman: unable to find linux-cachyos` | Você está em Arch puro, não CachyOS. O install filtra automaticamente; ignore |
-| `polkit: ... authentication required` | Habilite o agent do polkit no autostart: `polkit-gnome-authentication-agent-1` |
-| `hyprpm: command not found` | hyprland não foi instalado. Rode `gabrln` (install) de novo |
+| `Unsupported distribution` | Only Arch and CachyOS |
+| `Python 3.11+ required` | `pacman -S python` |
+| `python-rich not found` | `pacman -S python-rich` |
+| `pacman: unable to find linux-cachyos` | You're on Arch, not CachyOS — auto-filtered |
+| `polkit: ... authentication required` | Enable `polkit-gnome-authentication-agent-1` in autostart |
+| `hyprpm: command not found` | Re-run install |
 
-Para erros mais detalhados, veja os logs em `installer/logs/`. Para
-contribuir com o framework, veja `installer/README.md`.
+Logs in `installer/logs/`. See `installer/README.md` for internals.

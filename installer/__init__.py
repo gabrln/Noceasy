@@ -1,8 +1,10 @@
-"""Arch-gabrln installer (Python port).
+"""Noceasy installer (Python).
 
-Replaces the previous bash-based framework with a single Python
-package. The bootstrap is still install.sh (because polkit has no
-agent at TTY login); everything from there on is Python.
+Noceasy is a fast installer for Noctalia (Hyprland/Qt6 Wayland
+shell) on Arch Linux / CachyOS. This package is the install
+framework itself — the bootstrap lives in install.sh (because
+polkit has no agent at TTY login); everything from there on is
+Python.
 
 Subpackages:
     modules: the 16 install steps (each a class subclassing Module)

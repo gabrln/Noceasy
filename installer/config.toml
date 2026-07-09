@@ -1,53 +1,53 @@
-# Configuração global do framework Arch-gabrln
+# Noceasy framework configuration
 
 [paths]
-# Diretório base do repositório (detectado automaticamente pelo entrypoint)
+# Repo base directory (auto-detected by entrypoint)
 repo_dir = ""
 
-# Diretório de logs do framework
+# Logs directory
 logs_dir = "installer/logs"
 
-# Diretório de estado persistente
+# Persistent state directory
 state_dir = "installer/state"
 
-# Diretório de backups
+# Backups directory
 backups_dir = "installer/state/backups"
 
-# Diretório de manifestos declarativos
+# Declarative manifests directory
 manifests_dir = "installer/manifests"
 
-# Diretório de módulos
+# Modules directory
 modules_dir = "installer/modules"
 
 [install]
-# Diretório padrão onde o repositório será clonado quando executado via curl
-clone_target = "Projects/Arch-gabrln"
+# Default directory for the repo when run via curl
+clone_target = "Projects/Noceasy"
 
-# Pacotes mínimos para bootstrap do sistema (zsh, git, base-devel).
-# zsh é dependência do chsh no módulo 07-shell.
-# git e base-devel são necessários para compilações AUR via yay.
+# Minimum bootstrap packages (zsh, git, base-devel).
+# zsh is needed for chsh in module 07-shell.
+# git and base-devel are needed for AUR builds via yay.
 bootstrap_packages = ["git", "base-devel", "zsh"]
 
-# Espaço mínimo recomendado em bytes (5 GiB)
+# Minimum recommended free space in bytes (5 GiB)
 min_free_space = 5368709120
 
 [flags]
-# Pular módulos já concluídos conforme state.json
+# Skip already-done modules per state.json
 skip_up_to_date = true
 
-# Criar backup automático antes de modificar dotfiles
+# Auto-backup before modifying dotfiles
 auto_backup = true
 
-# Número máximo de backups automáticos retidos (0 = ilimitado)
+# Max retained auto-backups (0 = unlimited)
 max_backups = 3
 
-# Limpar cache TOML e arquivos temporários a cada execução
+# Clean TOML cache and temp files on every run
 cleanup_temp_on_exit = true
 
 [features]
-# Baixar e extrair pacote de wallpapers extras durante a instalação
+# Download and extract wallpaper pack during install
 wallpapers = true
 
-# Instalar e configurar polkit policy (auto-aprovada para REAL_USER)
-# Requer o pacote 'polkit' + agent (polkit-gnome) instalados.
+# Install polkit policy (auto-approved for REAL_USER)
+# Requires 'polkit' + agent (polkit-gnome) installed.
 enable_polkit_helper = true

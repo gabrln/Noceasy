@@ -40,9 +40,9 @@ CONFIG_FILE: Path = INSTALLER_DIR / "config.toml"
 STATE_FILE: Path = STATE_DIR / "state.json"
 
 # Polkit policy install paths
-POLKIT_RULES_PATH: Path = Path("/etc/polkit-1/rules.d/99-arch-gabrln-installer.rules")
-POLKIT_POLICY_PATH: Path = Path("/usr/share/polkit-1/actions/org.archlinux.pkexec.gabrln.policy")
-POLKIT_HELPER_PATH: Path = Path("/usr/local/bin/gabrln-helper")
+POLKIT_RULES_PATH: Path = Path("/etc/polkit-1/rules.d/99-noceasy-installer.rules")
+POLKIT_POLICY_PATH: Path = Path("/usr/share/polkit-1/actions/org.archlinux.pkexec.noceasy.policy")
+POLKIT_HELPER_PATH: Path = Path("/usr/local/bin/noceasy-helper")
 
 # Tunable limits (overridable via config.toml)
 DEFAULT_MIN_FREE_BYTES: int = 5 * 1024**3  # 5 GiB

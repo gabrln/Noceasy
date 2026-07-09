@@ -27,7 +27,7 @@ def _create_greeter_user() -> None:
 
 def _backup_etc_file(path: Path) -> None:
     """Backup an /etc file before overwriting (once)."""
-    bak = path.with_suffix(path.suffix + ".gabrln.bak")
+    bak = path.with_suffix(path.suffix + ".noceasy.bak")
     if path.exists() and not bak.exists():
         shutil.copy2(path, bak)
         bak.chmod(0o600)

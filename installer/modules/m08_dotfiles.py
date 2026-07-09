@@ -27,7 +27,7 @@ def _atomic_copytree(src: Path, dst: Path, user: str) -> bool:
     On failure, `dst` is preserved (untouched). The staging dir is
     always cleaned up.
     """
-    staging = Path(tempfile.mkdtemp(prefix="gabrln-dot-"))
+    staging = Path(tempfile.mkdtemp(prefix="noceasy-dot-"))
     try:
         proc = run_as_user(
             ["cp", "-a", str(src), str(staging / dst.name)],
@@ -65,7 +65,7 @@ def _copy_zsh_with_plugins_backup(
     """Copy zsh config while preserving the user's existing plugins/."""
     plugins_backup: Path | None = None
     if plugins_dst.is_dir():
-        plugins_backup = Path(tempfile.mkdtemp(prefix="gabrln-zsh-"))
+        plugins_backup = Path(tempfile.mkdtemp(prefix="noceasy-zsh-"))
         try:
             shutil.copytree(plugins_dst, plugins_backup / "plugins")
         except OSError as exc:
@@ -103,7 +103,7 @@ def _copy_avulso(src_rel: str, dst_template: str, ctx: RunContext) -> None:
 
     dst_path.parent.mkdir(parents=True, exist_ok=True)
     if dst_path.exists() and not dst_path.is_symlink():
-        bak = dst_path.with_suffix(dst_path.suffix + f".gabrln.bak.{int(time.time())}")
+        bak = dst_path.with_suffix(dst_path.suffix + f".noceasy.bak.{int(time.time())}")
         shutil.copy2(dst_path, bak)
 
     run_as_user(["cp", "-f", str(src_path), str(dst_path)],
