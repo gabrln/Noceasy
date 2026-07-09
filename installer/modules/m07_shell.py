@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import subprocess
-import time
 from pathlib import Path
 
+from installer.config import (
+    NETWORK_RETRY_ATTEMPTS,
+    NETWORK_RETRY_BASE_SECONDS,
+)
 from installer.errors import fatal
 from installer.logger import log
 from installer.modules.base import Module, RunContext
+from installer.modules.mixins import chown_user, retry_with_backoff
 from installer.privilege import run_as_user
 from installer.toml_cache import get_cache
 
@@ -27,47 +31,60 @@ def _getent_shell(user: str) -> str:
     return ""
 
 
+def _set_user_shell_env(user: str) -> None:
+    """Update SHELL in the systemd user manager if the user is logged in."""
+    try:
+        uid = subprocess.run(
+            ["id", "-u", user],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return
+
+    runtime_dir = f"/run/user/{uid}"
+    if not Path(runtime_dir).is_dir():
+        return
+
+    run_as_user(
+        ["systemctl", "--user", "set-environment", "SHELL=/usr/bin/zsh"],
+        user=user, check=False,
+        env={"XDG_RUNTIME_DIR": runtime_dir},
+    )
+
+
+def _clone_plugin(user: str, repo: str, dest: Path) -> bool:
+    proc = run_as_user(
+        ["git", "clone", "--depth=1", f"https://github.com/{repo}.git",
+         str(dest)],
+        user=user, check=False,
+    )
+    return proc.returncode == 0
+
+
 class ShellModule(Module):
     name = "07-shell"
     manifest = "zsh-plugins.toml"
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Configurando shell padrão...")
+        log("info", "Configuring default shell...")
 
         if not Path("/usr/bin/zsh").exists():
-            fatal("zsh não está instalado. Módulo 03 deveria ter instalado.")
+            fatal("zsh is not installed. Module 03 should have installed it.")
 
         current = _getent_shell(ctx.real_user)
         if current != "/usr/bin/zsh":
-            log("info", f"Alterando shell padrão de {current} para /usr/bin/zsh...")
+            log("info", f"Changing default shell of {current} to /usr/bin/zsh...")
             subprocess.run(["chsh", "-s", "/usr/bin/zsh", ctx.real_user],
                             check=False, capture_output=True)
         else:
-            log("info", "Shell padrão já é Zsh.")
+            log("info", "Default shell is already zsh.")
 
-        # Update SHELL in systemd user manager (if available)
-        try:
-            uid = subprocess.run(
-                ["id", "-u", ctx.real_user],
-                check=True, capture_output=True, text=True,
-            ).stdout.strip()
-            runtime_dir = f"/run/user/{uid}"
-            if Path(runtime_dir).is_dir():
-                import os
-                env = os.environ.copy()
-                env["XDG_RUNTIME_DIR"] = runtime_dir
-                run_as_user(
-                    ["systemctl", "--user", "set-environment", "SHELL=/usr/bin/zsh"],
-                    user=ctx.real_user,
-                    check=False,
-                )
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
+        _set_user_shell_env(ctx.real_user)
 
-        log("info", "Verificando plugins do Zsh...")
+        log("info", "Checking zsh plugins...")
         plugins_dir = ctx.user_home / ".config" / "zsh" / "plugins"
         plugins_dir.mkdir(parents=True, exist_ok=True)
-        chown_user_compat(plugins_dir, ctx.real_user)
+        chown_user(plugins_dir, ctx.real_user)
 
         plugins = get_cache().load("zsh-plugins.toml").get("plugins", [])
         for plugin in plugins:
@@ -77,38 +94,24 @@ class ShellModule(Module):
             plugin_path = plugins_dir / name
 
             if (plugin_path / entry).exists() or (plugin_path / entry).is_file():
-                log("success", f"Plugin {name} já instalado. Pulando.")
+                log("success", f"Plugin {name} already installed. Skipping.")
                 continue
 
-            log("info", f"Instalando plugin: {name}...")
+            log("info", f"Installing plugin: {name}...")
             if plugin_path.exists():
-                run_as_user(f"rm -rf '{plugin_path}'", user=ctx.real_user, check=False)
+                run_as_user(f"rm -rf '{plugin_path}'",
+                             user=ctx.real_user, check=False)
 
-            # Retry with backoff
-            ok = False
-            for attempt in range(3):
-                proc = run_as_user(
-                    ["git", "clone", "--depth=1", f"https://github.com/{repo}.git", str(plugin_path)],
-                    user=ctx.real_user, check=False,
-                )
-                if proc.returncode == 0:
-                    ok = True
-                    break
-                if attempt < 2:
-                    log("warn", f"  Tentativa {attempt+1} falhou para {name}, retentando em {2**attempt}s...")
-                    time.sleep(2 ** attempt)
+            ok = retry_with_backoff(
+                _clone_plugin, ctx.real_user, repo, plugin_path,
+                attempts=NETWORK_RETRY_ATTEMPTS,
+                base_seconds=NETWORK_RETRY_BASE_SECONDS,
+            )
             if ok:
-                log("success", f"Plugin {name} instalado.")
+                log("success", f"Plugin {name} installed.")
             else:
-                log("warn", f"Plugin {name} não pôde ser clonado após 3 tentativas.")
+                log("warn",
+                    f"Plugin {name} could not be cloned after "
+                    f"{NETWORK_RETRY_ATTEMPTS} attempts.")
 
-        log("success", "Shell e plugins configurados.")
-
-
-def chown_user_compat(path: Path, user: str) -> None:
-    import os
-    if not path.exists():
-        path.mkdir(parents=True, exist_ok=True)
-    import subprocess
-    subprocess.run(["chown", "-R", f"{user}:{user}", str(path)],
-                    check=False, capture_output=True)
+        log("success", "Shell and plugins configured.")

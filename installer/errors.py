@@ -25,7 +25,7 @@ def run_cleanup() -> None:
         try:
             hook()
         except Exception as exc:
-            log("debug", f"cleanup hook falhou: {exc}")
+            log("debug", f"cleanup hook failed: {exc}")
 
 
 def fatal(message: str, code: int = 1) -> None:
@@ -35,9 +35,9 @@ def fatal(message: str, code: int = 1) -> None:
     sys.exit(code)
 
 
-# Exit codes that are NOT considered fatal (e.g. `command -v` returns 1
-# when a binary is missing; that's expected and shouldn't trigger cleanup
-# of state).
+# Exit codes that are NOT considered fatal (e.g. `command -v` returns
+# 1 when a binary is missing; that's expected and shouldn't trigger
+# cleanup of state).
 _BENIGN_EXIT_CODES = {1, 2, 3, 64, 130, 141}
 
 
@@ -45,14 +45,14 @@ def is_benign_exit(code: int) -> bool:
     return code in _BENIGN_EXIT_CODES
 
 
-def _on_sigint(signum, frame):
-    log("warn", f"Sinal {signum} recebido. Cancelando...")
+def _on_signal(signum, frame):
+    log("warn", f"Signal {signum} received. Cancelling...")
     run_cleanup()
     sys.exit(130)
 
 
 def install_signal_handlers() -> None:
     """Trap SIGINT/SIGTERM for clean cancellation."""
-    signal.signal(signal.SIGINT, _on_sigint)
-    signal.signal(signal.SIGTERM, _on_sigint)
+    signal.signal(signal.SIGINT, _on_signal)
+    signal.signal(signal.SIGTERM, _on_signal)
     atexit.register(run_cleanup)

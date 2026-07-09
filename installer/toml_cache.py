@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, List
 
 from installer.config import MANIFESTS_DIR
 
@@ -17,7 +17,7 @@ class TomlCache:
     """In-memory cache of manifest TOML files."""
 
     def __init__(self) -> None:
-        self._cache: Dict[str, dict] = {}
+        self._cache: dict[str, dict] = {}
         self._loaded: set[str] = set()
 
     @staticmethod
@@ -75,7 +75,6 @@ class TomlCache:
         return out
 
 
-# Global cache instance
 _cache: TomlCache | None = None
 
 

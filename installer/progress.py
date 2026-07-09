@@ -4,8 +4,9 @@ Two modes:
     - TTY:    Animated bar with current/total counter
     - Non-TTY: log lines (one per step)
 
-Modules report progress via the Runner. This module is mostly internal
-to the Runner; consumers don't usually need to call it directly.
+Modules report progress via the Runner. This module is mostly
+internal to the Runner; consumers don't usually need to call it
+directly.
 """
 
 from __future__ import annotations

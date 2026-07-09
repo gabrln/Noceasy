@@ -15,20 +15,22 @@ class PreflightModule(Module):
     name = "00-preflight"
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Verificando pré-condições...")
+        log("info", "Checking pre-conditions...")
 
         if has_internet():
-            log("success", "Conectividade com a internet confirmada.")
+            log("success", "Internet connectivity confirmed.")
         else:
-            log("warn", "Não foi possível confirmar conectividade com a internet. Continuando mesmo assim.")
+            log("warn", "Could not confirm internet connectivity. Continuing anyway.")
 
-        min_bytes = get_cache().get("config.toml", "install.min_free_space", 5 * 1024**3)
+        min_bytes = get_cache().get(
+            "config.toml", "install.min_free_space", 5 * 1024**3)
         if has_free_space([ctx.user_home, Path("/")], min_bytes=int(min_bytes)):
-            log("success", "Espaço em disco suficiente.")
+            log("success", "Sufficient disk space.")
         else:
-            log("warn", f"Espaço em disco pode ser insuficiente (mínimo: {min_bytes} bytes).")
+            log("warn",
+                f"Disk space may be insufficient (minimum: {min_bytes} bytes).")
 
         log("info", f"REAL_USER: {ctx.real_user}")
         log("info", f"USER_HOME: {ctx.user_home}")
         log("info", f"REPO_DIR: {os.environ.get('REPO_DIR', '?')}")
-        log("success", "Pré-condições verificadas.")
+        log("success", "Pre-conditions verified.")

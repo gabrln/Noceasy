@@ -6,10 +6,24 @@ import subprocess
 import time
 from typing import List
 
+from installer.config import NETWORK_RETRY_ATTEMPTS, NETWORK_RETRY_BASE_SECONDS
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import is_command
 from installer.toml_cache import get_cache
+
+
+def _install_with_retry(remote: str, pkg: str) -> bool:
+    """Try `flatpak install` with exponential backoff. Returns True on success."""
+    for attempt in range(NETWORK_RETRY_ATTEMPTS):
+        if subprocess.run(
+            ["flatpak", "install", "-y", "--system", remote, pkg],
+            check=False, capture_output=True,
+        ).returncode == 0:
+            return True
+        if attempt < NETWORK_RETRY_ATTEMPTS - 1:
+            time.sleep(NETWORK_RETRY_BASE_SECONDS ** attempt)
+    return False
 
 
 class FlatpakModule(Module):
@@ -18,21 +32,23 @@ class FlatpakModule(Module):
 
     def run(self, ctx: RunContext) -> None:
         if not is_command("flatpak"):
-            log("warn", "flatpak não está instalado. Pulando.")
+            log("warn", "flatpak is not installed. Skipping.")
             return
 
-        log("info", "Configurando remote flathub...")
-        remote_url = get_cache().get("flatpak.toml", "remote.url",
-                                       "https://dl.flathub.org/repo/flathub.flatpakrepo")
+        log("info", "Configuring flathub remote...")
+        remote_url = get_cache().get(
+            "flatpak.toml", "remote.url",
+            "https://dl.flathub.org/repo/flathub.flatpakrepo")
         remote_name = get_cache().get("flatpak.toml", "remote.name", "flathub")
         subprocess.run(
-            ["flatpak", "remote-add", "--if-not-exists", "--system", remote_name, remote_url],
+            ["flatpak", "remote-add", "--if-not-exists", "--system",
+             remote_name, remote_url],
             check=False, capture_output=True,
         )
 
         packages = get_cache().get_list_field("flatpak.toml", "packages", "name")
         if not packages:
-            log("warn", "Nenhum pacote Flatpak a instalar.")
+            log("warn", "No Flatpak packages to install.")
             return
 
         missing: List[str] = []
@@ -42,32 +58,21 @@ class FlatpakModule(Module):
                 missing.append(pkg)
 
         if not missing:
-            log("success", "Todos os pacotes Flatpak já estão instalados.")
+            log("success", "All Flatpak packages are already installed.")
         else:
-            log("info", f"Instalando pacotes Flatpak pendentes: {' '.join(missing)}")
+            log("info", f"Installing missing Flatpak packages: {' '.join(missing)}")
             for pkg in missing:
-                # Retry with backoff
-                for attempt in range(3):
-                    if subprocess.run(
-                        ["flatpak", "install", "-y", "--system", remote_name, pkg],
-                        check=False, capture_output=True,
-                    ).returncode == 0:
-                        break
-                    time.sleep(2 ** attempt)
+                if _install_with_retry(remote_name, pkg):
+                    log("info", f"  -> {pkg} installed.")
                 else:
-                    log("warn", f"flatpak falhou para {pkg} após 3 tentativas.")
+                    log("warn",
+                        f"flatpak failed for {pkg} after "
+                        f"{NETWORK_RETRY_ATTEMPTS} attempts.")
 
-        # GTK themes for Flatpak sandbox
-        log("info", "Instalando temas adw-gtk3 para Flatpak...")
-        subprocess.run(
-            ["flatpak", "install", "-y", "--system", remote_name,
-             "org.gtk.Gtk3theme.adw-gtk3-dark"],
-            check=False, capture_output=True,
-        )
-        subprocess.run(
-            ["flatpak", "install", "-y", "--system", remote_name,
-             "org.gtk.Gtk3theme.adw-gtk3"],
-            check=False, capture_output=True,
-        )
+        # GTK themes for Flatpak sandbox (recommended by Noctalia)
+        log("info", "Installing adw-gtk3 themes for Flatpak...")
+        for theme in ("org.gtk.Gtk3theme.adw-gtk3-dark",
+                       "org.gtk.Gtk3theme.adw-gtk3"):
+            _install_with_retry(remote_name, theme)
 
-        log("success", "Pacotes Flatpak configurados.")
+        log("success", "Flatpak packages configured.")

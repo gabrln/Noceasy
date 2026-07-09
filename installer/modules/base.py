@@ -11,7 +11,12 @@ from installer.state import State
 
 @dataclass
 class RunContext:
-    """Context passed to every module's run() method."""
+    """Context passed to every module's run() method.
+
+    Provides the real user, the user home, and the state manager.
+    Modules should not read environment variables directly; use
+    this context instead.
+    """
 
     real_user: str
     user_home: Path
@@ -29,9 +34,9 @@ class RunContext:
 class Module:
     """Base class for install steps.
 
-    Subclasses override `run()`. Optionally set `name` and `manifest`.
-    `pre_check` and `post_check` can be overridden to short-circuit
-    (return False to skip) or validate.
+    Subclasses override `run()`. Optionally set `name` and
+    `manifest`. `pre_check` and `post_check` can be overridden to
+    short-circuit (return False to skip) or validate.
     """
 
     name: str = "unnamed"
@@ -46,6 +51,7 @@ class Module:
         return True
 
     def run(self, ctx: RunContext) -> None:
+        """Run the module. Raise on failure (the Runner will catch it)."""
         raise NotImplementedError
 
     def post_check(self, ctx: RunContext) -> None:

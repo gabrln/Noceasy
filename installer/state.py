@@ -11,12 +11,12 @@ import hashlib
 import json
 import os
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from installer.config import STATE_DIR, STATE_FILE
-from installer.errors import fatal
+from installer.config import STATE_DIR, STATE_FILE, LOCK_TIMEOUT_SECONDS
 from installer.logger import log
 
 
@@ -39,11 +39,44 @@ def hash_file(path: Path) -> str:
     return ""
 
 
-@dataclass
-class _LockedFile:
-    """File handle held while flock is acquired."""
+def atomic_write_json(path: Path, data: dict) -> None:
+    """Write `data` as JSON to `path` atomically.
 
-    fd: int
+    Creates a temp file in the same directory, fsyncs, then renames
+    via os.replace (atomic on POSIX). Permissions set to 0600.
+    """
+    dirpath = path.parent or Path(".")
+    fd, tmp = tempfile.mkstemp(dir=str(dirpath), prefix=".state.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(data, f, indent=2, sort_keys=True)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    except Exception:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def read_json_or_default(path: Path, default: dict) -> dict:
+    """Read JSON from `path` or return `default` on any error.
+
+    If the file exists but is corrupted, it's moved aside with a
+    timestamp suffix and a fresh empty file is created.
+    """
+    try:
+        return json.loads(path.read_text() or "{}")
+    except (OSError, json.JSONDecodeError) as exc:
+        log("warn", f"state.json corrupted: {exc}. Backing up and recreating.")
+        backup = path.parent / f"state.json.corrupt-{int(time.time())}"
+        try:
+            path.rename(backup)
+        except OSError:
+            pass
+        atomic_write_json(path, default)
+        return default
 
 
 class State:
@@ -55,44 +88,30 @@ class State:
         self.dir.mkdir(parents=True, exist_ok=True)
         self.dir.chmod(0o700)
         if not self.path.exists():
-            self._write_unlocked({})
+            atomic_write_json(self.path, {})
             self.path.chmod(0o600)
         self._lock_path = self.dir / ".state.lock"
         self._lock_fd: Optional[int] = None
 
-    def _read_unlocked(self) -> dict:
-        try:
-            return json.loads(self.path.read_text() or "{}")
-        except (OSError, json.JSONDecodeError) as exc:
-            import time
-            log("warn", f"state.json corrompido: {exc}. Fazendo backup e recriando.")
-            backup = self.dir / f"state.json.corrupt-{int(time.time())}"
-            try:
-                self.path.rename(backup)
-            except OSError:
-                pass
-            self._write_unlocked({})
-            return {}
-
-    def _write_unlocked(self, data: dict) -> None:
-        fd, tmp = tempfile.mkstemp(
-            dir=str(self.dir), prefix=".state.", suffix=".tmp"
-        )
-        try:
-            with os.fdopen(fd, "w") as f:
-                json.dump(data, f, indent=2, sort_keys=True)
-                f.flush()
-                os.fsync(f.fileno())
-            os.chmod(tmp, 0o600)
-            os.replace(tmp, self.path)
-        except Exception:
-            if os.path.exists(tmp):
-                os.unlink(tmp)
-            raise
-
     def __enter__(self) -> "State":
-        self._lock_fd = os.open(str(self._lock_path), os.O_CREAT | os.O_RDWR, 0o600)
-        fcntl.flock(self._lock_fd, fcntl.LOCK_EX)
+        self._lock_fd = os.open(str(self._lock_path),
+                                 os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            # Fall back to blocking lock with timeout
+            import errno
+            import select
+            deadline = time.monotonic() + LOCK_TIMEOUT_SECONDS
+            while time.monotonic() < deadline:
+                try:
+                    fcntl.flock(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    time.sleep(0.1)
+            else:
+                log("warn", f"Could not acquire state.json lock "
+                            f"after {LOCK_TIMEOUT_SECONDS}s.")
         return self
 
     def __exit__(self, *args) -> None:
@@ -102,18 +121,17 @@ class State:
             self._lock_fd = None
 
     def get(self, module: str, field: str) -> str:
-        data = self._read_unlocked()
+        data = read_json_or_default(self.path, {})
         return str(data.get(module, {}).get(field, ""))
 
     def set(self, module: str, field: str, value: str) -> None:
         with self:
-            data = self._read_unlocked()
+            data = read_json_or_default(self.path, {})
             data.setdefault(module, {})[field] = value
-            self._write_unlocked(data)
+            atomic_write_json(self.path, data)
 
     def is_up_to_date(self, module: str, manifest: Optional[Path]) -> bool:
-        with self:
-            data = self._read_unlocked()
+        data = read_json_or_default(self.path, {})
         if data.get(module, {}).get("status") != "done":
             return False
         if manifest is None or not manifest.exists():
@@ -124,21 +142,23 @@ class State:
 
     def mark_done(self, module: str, manifest: Optional[Path]) -> None:
         with self:
-            data = self._read_unlocked()
+            data = read_json_or_default(self.path, {})
             entry = data.setdefault(module, {})
             entry["status"] = "done"
             entry["completed_at"] = _iso_now()
-            entry["manifest_hash"] = hash_file(manifest) if manifest and manifest.exists() else ""
-            self._write_unlocked(data)
+            entry["manifest_hash"] = (
+                hash_file(manifest) if manifest and manifest.exists() else ""
+            )
+            atomic_write_json(self.path, data)
 
     def mark_failed(self, module: str, reason: str) -> None:
         with self:
-            data = self._read_unlocked()
+            data = read_json_or_default(self.path, {})
             entry = data.setdefault(module, {})
             entry["status"] = "failed"
             entry["failure_reason"] = reason
             entry["failed_at"] = _iso_now()
-            self._write_unlocked(data)
+            atomic_write_json(self.path, data)
 
 
 def _iso_now() -> str:

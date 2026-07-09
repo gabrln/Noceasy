@@ -16,26 +16,29 @@ class ServicesModule(Module):
     manifest = "services.toml"
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Lendo serviços do manifesto...")
+        log("info", "Reading services from manifest...")
 
-        services: List[str] = get_cache().get_list_field("services.toml", "services", "name")
+        services: List[str] = get_cache().get_list_field(
+            "services.toml", "services", "name")
         if not services:
-            log("warn", "Nenhum serviço configurado. Pulando.")
+            log("warn", "No services configured. Skipping.")
             return
 
-        log("info", "Habilitando serviços do Systemd...")
+        log("info", "Enabling systemd services...")
         enabled = skipped = failed = 0
         for svc in services:
             if not systemd_unit_exists(svc):
-                log("warn", f"  → {svc} (unit não encontrada, pulando)")
+                log("warn", f"  -> {svc} (unit not found, skipping)")
                 skipped += 1
                 continue
             if subprocess.run(["systemctl", "enable", svc],
                                 check=False, capture_output=True).returncode == 0:
-                log("info", f"  → {svc} habilitado")
+                log("info", f"  -> {svc} enabled")
                 enabled += 1
             else:
-                log("warn", f"  → {svc} falhou ao habilitar")
+                log("warn", f"  -> {svc} failed to enable")
                 failed += 1
 
-        log("success", f"Serviços processados ({enabled} habilitados, {skipped} pulados, {failed} falhas).")
+        log("success",
+            f"Services processed ({enabled} enabled, "
+            f"{skipped} skipped, {failed} failed).")

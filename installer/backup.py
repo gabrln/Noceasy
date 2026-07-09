@@ -2,14 +2,16 @@
 
 Differences from the bash version:
     - Collision suffix .1/.2/... when basenames collide
-    - Different ownership handling: ~/.config/* preserves user ownership,
-      /etc/* uses --no-preserve=ownership
+    - Different ownership handling: ~/.config/* preserves user
+      ownership, /etc/* uses --no-preserve=ownership
     - max_backups retention (read from config.toml)
     - Atomic restore via staging directory
 """
 
 from __future__ import annotations
 
+import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -18,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from installer.config import BACKUPS_DIR, CONFIG_FILE, get_config
+from installer.config import BACKUPS_DIR, get_config
 from installer.logger import log
 
 
@@ -39,12 +41,30 @@ def _unique_name(dest: Path, base: str) -> str:
 
 
 def _is_system_path(p: Path) -> bool:
+    """System paths lose ownership; user paths keep it."""
     s = str(p)
     return s.startswith(("/etc/", "/usr/", "/var/"))
 
 
 def _timestamp() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+_COLLISION_SUFFIX_RE = re.compile(r"^(.+)\.(\d+)$")
+
+
+def _strip_collision_suffix(name: str) -> str:
+    """Strip a trailing .N collision suffix from a backup item name.
+
+    Examples:
+        '.zshrc.1' -> '.zshrc'
+        'greetd'   -> 'greetd'
+        '.zshrc'   -> '.zshrc'
+    """
+    m = _COLLISION_SUFFIX_RE.match(name)
+    if m:
+        return m.group(1)
+    return name
 
 
 @dataclass
@@ -54,7 +74,7 @@ class _CreatedBackup:
 
 
 def create(label: str, paths: List[Path]) -> _CreatedBackup:
-    """Create a snapshot. Logs to stdout/stderr, returns the snapshot name."""
+    """Create a snapshot. Logs progress; returns the snapshot name."""
     if not BACKUPS_DIR.exists():
         init_backups()
 
@@ -62,12 +82,12 @@ def create(label: str, paths: List[Path]) -> _CreatedBackup:
     dest = BACKUPS_DIR / name
     dest.mkdir(parents=True, exist_ok=True)
 
-    log("info", f"Criando backup '{name}'...")
+    log("info", f"Creating backup '{name}'...")
     copied: List[Path] = []
 
     for path in paths:
         if not path.exists():
-            log("warn", f"  → {path} não existe, pulando.")
+            log("warn", f"  -> {path} does not exist, skipping.")
             continue
         base = path.name
         target_name = _unique_name(dest, base)
@@ -76,7 +96,8 @@ def create(label: str, paths: List[Path]) -> _CreatedBackup:
             if _is_system_path(path):
                 # -a --no-preserve=ownership: copy attrs but force root
                 subprocess.run(
-                    ["cp", "-a", "--no-preserve=ownership", str(path), str(target)],
+                    ["cp", "-a", "--no-preserve=ownership",
+                     str(path), str(target)],
                     check=True, capture_output=True,
                 )
             else:
@@ -85,10 +106,11 @@ def create(label: str, paths: List[Path]) -> _CreatedBackup:
                     ["cp", "-a", str(path), str(target)],
                     check=True, capture_output=True,
                 )
-            log("info", f"  → {path}")
+            log("info", f"  -> {path}")
             copied.append(target)
         except subprocess.CalledProcessError as exc:
-            log("warn", f"  → falha ao copiar {path}: {exc.stderr.decode().strip()}")
+            err = exc.stderr.decode().strip() if exc.stderr else "unknown"
+            log("warn", f"  -> failed to copy {path}: {err}")
 
     # Apply retention
     max_backups = get_config("flags.max_backups", 3)
@@ -105,17 +127,18 @@ def create(label: str, paths: List[Path]) -> _CreatedBackup:
 def _apply_retention(label: str, max_keep: int) -> None:
     """Keep only the most recent `max_keep` snapshots with this label."""
     snaps = sorted(
-        [p for p in BACKUPS_DIR.iterdir() if p.is_dir() and p.name.startswith(f"{label}-")],
+        [p for p in BACKUPS_DIR.iterdir()
+         if p.is_dir() and p.name.startswith(f"{label}-")],
         key=lambda p: p.name,
         reverse=True,
     )
     for old in snaps[max_keep:]:
-        log("info", f"  → removendo backup antigo: {old.name}")
+        log("info", f"  -> removing old backup: {old.name}")
         shutil.rmtree(old, ignore_errors=True)
 
 
 def list_snapshots(label: Optional[str] = None) -> List[str]:
-    """List snapshot names, most recent first. Optionally filtered by label."""
+    """List snapshot names, most recent first. Optionally filtered."""
     if not BACKUPS_DIR.exists():
         return []
     all_snaps = sorted(
@@ -131,23 +154,22 @@ def restore(label: str) -> bool:
     """Restore the most recent snapshot with the given label."""
     snaps = list_snapshots(label=label)
     if not snaps:
-        log("error", f"Nenhum backup encontrado com label '{label}'.")
+        log("error", f"No backup found with label '{label}'.")
         return False
 
     latest = snaps[0]
     src = BACKUPS_DIR / latest
-    log("warn", f"Isso sobrescreverá os arquivos atuais com o backup '{latest}'.")
+    log("warn", f"This will overwrite current files with backup '{latest}'.")
 
-    # Interactive confirmation
-    if not _confirm("Continuar com o rollback?"):
-        log("info", "Rollback cancelado.")
+    if not _confirm("Continue with rollback?"):
+        log("info", "Rollback cancelled.")
         return True
 
-    log("info", f"Restaurando backup '{latest}'...")
+    log("info", f"Restoring backup '{latest}'...")
     for item in src.iterdir():
         target = _resolve_target(item.name)
         if target is None:
-            log("warn", f"  → destino desconhecido para {item.name}, pulando.")
+            log("warn", f"  -> unknown destination for {item.name}, skipping.")
             continue
 
         # Atomic restore: copy to staging, then rm + mv
@@ -162,7 +184,7 @@ def restore(label: str) -> bool:
                     shutil.rmtree(target)
             (staging / target.name).rename(target)
         except OSError as exc:
-            log("warn", f"  → falha ao restaurar {item.name}: {exc}")
+            log("warn", f"  -> failed to restore {item.name}: {exc}")
             continue
         finally:
             shutil.rmtree(staging, ignore_errors=True)
@@ -170,7 +192,6 @@ def restore(label: str) -> bool:
         # Restore ownership for user paths
         if not _is_system_path(target):
             try:
-                import os
                 uid = int(os.environ.get("SUDO_UID", "0"))
                 gid = int(os.environ.get("SUDO_GID", "0"))
                 if uid and gid:
@@ -181,9 +202,9 @@ def restore(label: str) -> bool:
             except (ValueError, OSError):
                 pass
 
-        log("info", f"  → {target}")
+        log("info", f"  -> {target}")
 
-    log("success", f"Backup '{latest}' restaurado.")
+    log("success", f"Backup '{latest}' restored.")
     return True
 
 
@@ -201,16 +222,8 @@ def _confirm(prompt: str, default_yes: bool = False) -> bool:
 
 def _resolve_target(name: str) -> Optional[Path]:
     """Map a backup item basename to its original target path."""
-    import os
     user_home = Path(os.environ.get("USER_HOME", "/root"))
-
-    # Strip .N collision suffix for matching
-    stripped = name
-    for i in range(100, -1, -1):
-        suffix = f".{i}" if i > 0 else ""
-        if stripped.endswith(suffix):
-            stripped = stripped[: -len(suffix)] if suffix else stripped
-            break
+    stripped = _strip_collision_suffix(name)
 
     if stripped == ".config":
         return user_home / ".config"

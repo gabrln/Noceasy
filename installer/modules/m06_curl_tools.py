@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import os
-import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import List
@@ -20,8 +17,26 @@ from installer.toml_cache import get_cache
 
 def _parse_tools() -> List[dict]:
     """Parse the entire curl-tools.toml into a list of dicts."""
-    data = get_cache().load("curl-tools.toml")
-    return data.get("tools", [])
+    return get_cache().load("curl-tools.toml").get("tools", [])
+
+
+def _expand_path(template: str, user_home: Path) -> str:
+    """Expand $HOME and ~ in a path string."""
+    expanded = os.path.expandvars(template)
+    if expanded.startswith("~"):
+        expanded = str(user_home) + expanded[1:]
+    return expanded
+
+
+def _is_installed(binaries: List[str], fallback_paths: List[str]) -> bool:
+    """True if any binary in PATH or any fallback file exists."""
+    for b in binaries:
+        if b and is_command(b):
+            return True
+    for p in fallback_paths:
+        if p and Path(p).is_file():
+            return True
+    return False
 
 
 class CurlToolsModule(Module):
@@ -29,17 +44,17 @@ class CurlToolsModule(Module):
     manifest = "curl-tools.toml"
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Verificando ferramentas de coding AI...")
+        log("info", "Checking AI coding tools...")
 
         local_bin = ctx.user_home / ".local" / "bin"
         if not local_bin.exists():
-            log("info", f"Criando {local_bin}...")
+            log("info", f"Creating {local_bin}...")
             run_as_user(f"mkdir -p '{local_bin}'", user=ctx.real_user, check=False)
             chown_user(local_bin, ctx.real_user)
 
         tools = _parse_tools()
         if not tools:
-            log("warn", "Nenhuma ferramenta configurada em curl-tools.toml.")
+            log("warn", "No tools configured in curl-tools.toml.")
             return
 
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,41 +62,25 @@ class CurlToolsModule(Module):
             name = tool["name"]
             install_url = tool["install_url"]
             binaries = tool.get("binaries", [])
-            fallback_paths = tool.get("fallback_paths", [])
             env_var = tool.get("env_var", "")
             env_value = tool.get("env_value", "")
+            fallback_paths = [
+                _expand_path(p, ctx.user_home)
+                for p in tool.get("fallback_paths", [])
+            ]
 
-            # Resolve fallback paths (expand ~ and $HOME)
-            resolved_fallbacks = []
-            for fp in fallback_paths:
-                expanded = os.path.expandvars(fp)
-                if expanded.startswith("~"):
-                    expanded = str(ctx.user_home) + expanded[1:]
-                resolved_fallbacks.append(expanded)
-
-            # Skip if already installed
-            already = False
-            for bin_name in binaries:
-                if is_command(bin_name):
-                    already = True
-                    break
-            if not already:
-                for path in resolved_fallbacks:
-                    if Path(path).is_file():
-                        already = True
-                        break
-            if already:
-                log("success", f"{name} já está instalado. Pulando.")
+            if _is_installed(binaries, fallback_paths):
+                log("success", f"{name} already installed. Skipping.")
                 continue
 
-            log("info", f"Instalando {name}...")
+            log("info", f"Installing {name}...")
 
-            # Write a wrapper script so we don't interpolate $install_url
-            # into a shell string (avoids command injection).
+            # Per-tool log file with PID suffix for retry safety
             log_file = LOGS_DIR / f"curl-tools-{name}-{os.getpid()}.log"
             log_file.touch()
             chown_user(log_file, ctx.real_user)
 
+            # Write the wrapper script (avoids shell interpolation of URL)
             wrapper = Path(tempfile.mkstemp(prefix="gabrln-curl-", suffix=".sh")[1])
             wrapper.chmod(0o700)
             wrapper.write_text(
@@ -90,17 +89,20 @@ class CurlToolsModule(Module):
                 f'curl -fsSL "{install_url}" | bash\n'
             )
 
-            env_args = []
+            # Build env vars to pass to the subshell
+            extra_env = {}
             if env_var:
-                env_args = [f"{env_var}={env_value}"]
+                extra_env[env_var] = env_value
 
-            env_export = " ".join(f"{k}" for k in env_args)
-            env_export += " " if env_export else ""
+            # Use login shell so $PATH is set up; pass wrapper via env var
+            cmd = (
+                f"export WRAPPER='{wrapper}'\n"
+                f"exec bash '$WRAPPER' < /dev/null"
+            )
             proc = run_as_user(
-                ["bash", "-lc",
-                 f"set -e -o pipefail; {env_export}WRAPPER='{wrapper}' bash -c 'exec \"$WRAPPER\"' < /dev/null"],
-                user=ctx.real_user,
-                check=False,
+                ["bash", "-lc", cmd],
+                user=ctx.real_user, check=False,
+                env=extra_env,
             )
             try:
                 wrapper.unlink()
@@ -108,15 +110,14 @@ class CurlToolsModule(Module):
                 pass
 
             if proc.returncode != 0:
-                log("warn", f"{name} pode não ter sido instalado. Veja {log_file}.")
+                log("warn",
+                    f"{name} may not have installed correctly. "
+                    f"See {log_file}.")
                 continue
 
-            # Re-verify
-            installed = any(is_command(b) for b in binaries) or \
-                         any(Path(p).is_file() for p in resolved_fallbacks)
-            if installed:
-                log("success", f"{name} instalado.")
+            if _is_installed(binaries, fallback_paths):
+                log("success", f"{name} installed.")
             else:
-                log("warn", f"{name} pode não ter sido instalado corretamente.")
+                log("warn", f"{name} may not have installed correctly.")
 
-        log("success", "Ferramentas via curl verificadas.")
+        log("success", "Curl-based tools verified.")
