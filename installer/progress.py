@@ -263,11 +263,14 @@ class LiveDisplay:
         )
         self._live = Live(
             self._render(),
-            console=Console(stderr=False),
+            console=self._console,
             refresh_per_second=12,
             transient=False,
         )
         self._live.start()
+        # Force immediate render so the panel is visible
+        # before the first refresh tick.
+        self._live.update(self._render(), refresh=True)
 
     def stop(self) -> None:
         if self._live:
