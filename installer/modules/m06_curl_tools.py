@@ -81,8 +81,11 @@ class CurlToolsModule(Module):
             chown_user(log_file, ctx.real_user)
 
             # Write the wrapper script (avoids shell interpolation of URL)
+            # mkdtemp/mkstemp create as root-owned; chown to the target
+            # user so runuser('bash -lc ...') can read+execute it.
             wrapper = Path(tempfile.mkstemp(prefix="noceasy-curl-", suffix=".sh")[1])
             wrapper.chmod(0o700)
+            chown_user(wrapper, ctx.real_user)
             wrapper.write_text(
                 "#!/usr/bin/env bash\n"
                 "set -e -o pipefail\n"
