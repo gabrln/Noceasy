@@ -31,12 +31,12 @@ local function open_terminal_with(cmd)
     -- Checa se o binario existe antes de tentar abrir
     local bin = full:match("^(%S+)")
     if bin and exec_capture("command -v " .. bin) ~= "" then
-      hl.exec(full)
+      hl.exec_cmd(full)
       return true
     end
   end
   -- Fallback: notificacao. O usuario roda manualmente.
-  hl.exec([[notify-send -u critical "Noceasy bootstrap" "Plugin hyprpm faltando. Rode manualmente: ]] .. cmd .. [["]])
+  hl.exec_cmd([[notify-send -u critical "Noceasy bootstrap" "Plugin hyprpm faltando. Rode manualmente: ]] .. cmd .. [["]])
   return false
 end
 
