@@ -206,6 +206,7 @@ env \
   REPO_DIR="$REPO_DIR" \
   NO_COLOR="${NO_COLOR:-}" \
   NOCEASY_VERSION="$NOCEASY_VERSION" \
+  PYTHONIOENCODING="utf-8" \
   python3 -m installer "$@"
 PY_EXIT=$?
 set -e

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
+import time
 from pathlib import Path
 
 from installer.config import YAY_CHUNK_SIZE
@@ -17,7 +19,21 @@ from installer.toml_cache import get_cache
 _SUDOERS_NOCEASY = Path("/etc/sudoers.d/00-noceasy-yay")
 _SUDOERS_CONTENT = "{user} ALL=(ALL) NOPASSWD: /usr/bin/pacman, /usr/bin/makepkg\n"
 
-# Lines from yay that we want to show the user.
+# Build-system progress markers we can extract from makepkg's output
+# to show *some* compile progress instead of a static spinner for
+# the whole (potentially long) build. Not all AUR packages use
+# these build systems, so this is best-effort: if no match, the
+# step text just stays as "Building <pkg>".
+_CMAKE_PCT_RE = re.compile(r"^\[\s*(\d{1,3})%\]")     # "[ 42%] Building CXX ..."
+_NINJA_STEP_RE = re.compile(r"^\[(\d+)/(\d+)\]")        # "[123/456] Building CXX ..."
+
+# Throttle @STEP updates during compilation: these can fire dozens of
+# times per second on a fast build (ninja logs one line per object
+# file). The Live display already redraws at 12 Hz; anything faster
+# just wastes CPU parsing markers that will never be seen.
+_STEP_UPDATE_INTERVAL = 0.1  # seconds
+
+
 def _pacman_missing(pkgs: list[str]) -> list[str]:
     out = run(["pacman", "-T", *pkgs])
     return out.stdout.strip().split() if out.stdout else []
@@ -26,12 +42,14 @@ def _pacman_missing(pkgs: list[str]) -> list[str]:
 def _install_streamed(cmd: list[str], user: str) -> bool:
     """Run a command as the real user, streaming output in real-time.
 
-    Only the '==> Making package: X' line from each build is shown
-    on the terminal (one line per package). Everything else goes to
-    the log file. This gives a DankLinux-style clean output:
+    Shows the package being built, and — when the underlying build
+    system emits recognisable progress (CMake's "[ 42%]" or Ninja's
+    "[123/456]" lines) — appends that to the step text so long
+    compiles (noctalia-git, etc.) show real movement instead of a
+    static spinner:
 
-      building noctalia-git
-      building bibata-cursor-theme-bin
+      Building noctalia-git (42%)
+      Building noctalia-git (123/456)
     """
     argv = ["runuser", "-u", user, "--", *cmd]
     proc = subprocess.Popen(
@@ -41,16 +59,38 @@ def _install_streamed(cmd: list[str], user: str) -> bool:
         text=True,
         bufsize=1,
     )
+    current_pkg = ""
+    last_update = 0.0
     try:
         assert proc.stdout is not None
         for line in proc.stdout:
             line = line.rstrip()
-            # Only show the package name that is being built.
+
             if line.startswith("==>") and "Making package:" in line:
-                pkg_name = line.split("Making package:")[1].split()[0]
-                # Use markers that _OutputCapture picks up.
-                print(f"@STEP:Building {pkg_name}")
-                print(f"@CMD:yay -S --needed --noconfirm --removemake {pkg_name}")
+                current_pkg = line.split("Making package:")[1].split()[0]
+                print(f"@STEP:Building {current_pkg}")
+                print(f"@CMD:yay -S --needed --noconfirm --removemake {current_pkg}")
+                last_update = time.monotonic()
+                continue
+
+            if not current_pkg:
+                continue
+
+            now = time.monotonic()
+            if now - last_update < _STEP_UPDATE_INTERVAL:
+                continue
+
+            m_cmake = _CMAKE_PCT_RE.match(line)
+            if m_cmake:
+                print(f"@STEP:Building {current_pkg} ({m_cmake.group(1)}%)")
+                last_update = now
+                continue
+
+            m_ninja = _NINJA_STEP_RE.match(line)
+            if m_ninja:
+                done, total = m_ninja.groups()
+                print(f"@STEP:Building {current_pkg} ({done}/{total})")
+                last_update = now
     except (OSError, ValueError):
         pass
     return proc.wait() == 0

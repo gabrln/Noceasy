@@ -155,10 +155,11 @@ class LivePanelRenderer:
     """
 
     def __init__(self, state: ProgressState, progress,
-                 width: int = PANEL_WIDTH) -> None:
+                 width: int = PANEL_WIDTH, height: int | None = None) -> None:
         self._state = state
         self._progress = progress  # rich.progress.Progress or None
         self._width = width
+        self._height = height
 
     def render(self):
         """Return the Rich renderable for the current state, centered."""
@@ -204,9 +205,10 @@ class LivePanelRenderer:
             style=f"on {c['bg']}",
         )
         # Center horizontally AND vertically within the terminal.
-        # Requires the Live console to be in screen (alt-screen) mode
-        # so the full terminal height is available for centering.
-        return Align.center(panel, vertical="middle")
+        # Align needs an explicit height to center vertically —
+        # without it, it only sizes to the renderable's own content
+        # height and never uses the terminal's full height.
+        return Align.center(panel, vertical="middle", height=self._height)
 
 
 # ── OutputCapture ────────────────────────────────────────────────────
@@ -286,6 +288,7 @@ class LiveDisplay:
         self._task_id = None
         self._final: list[str] = []
         self._panel_width = PANEL_WIDTH
+        self._panel_height: int | None = None
 
     # ── Lifecycle ───────────────────────────────────────────────────
 
@@ -308,12 +311,23 @@ class LiveDisplay:
         # Fix: capture the real stdout now (before any swap) and
         # pin the Console to that exact file handle.
         real_stdout = sys.stdout
-        self._console = Console(file=real_stdout, force_terminal=True)
+        # force_terminal=True only bypasses the isatty() check; it does
+        # NOT guarantee color rendering. Under `sudo` (especially via
+        # `curl | sudo bash`), the environment may lack a proper
+        # locale/TERM, causing Rich's "auto" color_system detection to
+        # downgrade to no-color. Force truecolor explicitly since the
+        # Tokyo Night palette uses hex/RGB colors.
+        self._console = Console(
+            file=real_stdout,
+            force_terminal=True,
+            color_system="truecolor",
+        )
 
         # Fit the panel to the terminal: cap at PANEL_WIDTH, but
         # shrink on narrow terminals so it never overflows/wraps.
-        term_cols, _ = shutil.get_terminal_size(fallback=(PANEL_WIDTH + 4, 24))
+        term_cols, term_rows = shutil.get_terminal_size(fallback=(PANEL_WIDTH + 4, 24))
         self._panel_width = max(40, min(PANEL_WIDTH, term_cols - 4))
+        self._panel_height = term_rows
 
         c = TOKYO_NIGHT
         self._progress = Progress(
@@ -409,6 +423,7 @@ class LiveDisplay:
                 self._task_id
             ].total if self._task_id is not None else 1
         renderer = LivePanelRenderer(
-            self._state, self._progress, width=self._panel_width,
+            self._state, self._progress,
+            width=self._panel_width, height=self._panel_height,
         )
         return renderer.render()
