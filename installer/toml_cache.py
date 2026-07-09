@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 from installer.config import MANIFESTS_DIR
 
@@ -17,7 +17,7 @@ class TomlCache:
     """In-memory cache of manifest TOML files."""
 
     def __init__(self) -> None:
-        self._cache: Dict[str, dict] = {}
+        self._cache: dict[str, dict] = {}
         self._loaded: set[str] = set()
 
     @staticmethod
@@ -51,7 +51,7 @@ class TomlCache:
             cur = cur[part]
         return cur
 
-    def get_list(self, name: str, dotted_key: str) -> List[str]:
+    def get_list(self, name: str, dotted_key: str) -> list[str]:
         """Get a list of strings at `dotted_key`. Empty list if missing."""
         data = self.get(name, dotted_key)
         if data is None:
@@ -60,7 +60,7 @@ class TomlCache:
             return [str(x) for x in data]
         return [str(data)]
 
-    def get_list_field(self, name: str, table_key: str, field: str) -> List[str]:
+    def get_list_field(self, name: str, table_key: str, field: str) -> list[str]:
         """Get `field` from each table in a list-of-tables at `table_key`."""
         data = self.load(name)
         cur = data
@@ -68,14 +68,13 @@ class TomlCache:
             cur = cur.get(part, {}) if isinstance(cur, dict) else {}
         if not isinstance(cur, list):
             return []
-        out: List[str] = []
+        out: list[str] = []
         for item in cur:
             if isinstance(item, dict) and field in item and item[field] is not None:
                 out.append(str(item[field]))
         return out
 
 
-# Global cache instance
 _cache: TomlCache | None = None
 
 

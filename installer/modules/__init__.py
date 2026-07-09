@@ -1,4 +1,10 @@
-"""Module base class + the 16 install steps as Module subclasses."""
+"""Module base class + the 16 install steps as Module subclasses.
+
+To add a new module:
+    1. Create installer/modules/mNN_name.py with a class inheriting
+       from Module.
+    2. Import and register it in build_default_pipeline() below.
+"""
 
 from installer.modules.base import Module, RunContext
 from installer.modules.preflight import PreflightModule

@@ -4,15 +4,16 @@ Two modes:
     - TTY:    Animated bar with current/total counter
     - Non-TTY: log lines (one per step)
 
-Modules report progress via the Runner. This module is mostly internal
-to the Runner; consumers don't usually need to call it directly.
+Modules report progress via the Runner. This module is mostly
+internal to the Runner; consumers don't usually need to call it
+directly.
 """
 
 from __future__ import annotations
 
 import os
 import sys
-from typing import Optional
+
 
 from rich.console import Console
 from rich.progress import (
@@ -32,7 +33,7 @@ def _is_tty() -> bool:
     return sys.stderr.isatty()
 
 
-def make_progress(total: int, label: str = "install") -> Optional[Progress]:
+def make_progress(total: int, label: str = "install") -> Progress | None:
     """Create a Rich Progress bar (or None if not TTY).
 
     Use as a context manager:

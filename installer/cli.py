@@ -1,19 +1,20 @@
 """CLI parsing and main entrypoint.
 
 Usage:
-  sudo python3 -m installer                  # instalação completa
-  sudo python3 -m installer --dry-run        # simula sem modificar
-  sudo python3 -m installer --verbose        # habilita logs DEBUG
-  sudo python3 -m installer --quiet          # suprime INFO
-  sudo python3 -m installer --force          # re-roda módulos já done
-  sudo python3 -m installer --no-color       # desabilita cor
-  sudo python3 -m installer --help           # mostra esta mensagem
+  sudo python3 -m installer                  # full install
+  sudo python3 -m installer --dry-run        # simulate
+  sudo python3 -m installer --verbose        # DEBUG logs
+  sudo python3 -m installer --quiet          # suppress INFO
+  sudo python3 -m installer --force          # re-run done modules
+  sudo python3 -m installer --no-color       # disable color
+  sudo python3 -m installer --help           # show this message
 
-Variáveis de ambiente:
-  NO_COLOR=1    Desabilita saída colorida (https://no-color.org/)
-  GABRLN_VERSION, GABRLN_SHA256    Pin de versão (lido pelo install.sh)
+Environment variables:
+  NO_COLOR=1            Disable colored output (https://no-color.org/)
+  GABRLN_VERSION        Pin version (read by install.sh)
+  GABRLN_SHA256         Commit SHA to verify (read by install.sh)
 
-Requer root (execute via `sudo bash install.sh`).
+Requires root (run via `sudo bash install.sh`).
 """
 
 from __future__ import annotations
@@ -24,16 +25,20 @@ import sys
 from pathlib import Path
 
 from installer import __version__
-from installer.config import INSTALLER_DIR, REPO_DIR, STATE_DIR, LOGS_DIR
+from installer.config import INSTALLER_DIR, REPO_DIR, LOGS_DIR
 from installer.errors import install_signal_handlers, fatal
 from installer.logger import LogLevel, setup_logging, log
-from installer.privilege import detect_real_user, setup_polkit_policy, cleanup_polkit_policy
+from installer.privilege import (
+    detect_real_user,
+    setup_polkit_policy,
+    cleanup_polkit_policy,
+)
 from installer.runner import ModuleRunner
 from installer.modules import build_default_pipeline
 
 
 def _print_help_header() -> None:
-    """Print the help text from the module docstring."""
+    """Print help text from the module docstring + a flag list."""
     import installer.cli as this
     doc = (this.__doc__ or "").strip()
     print(doc)
@@ -47,7 +52,7 @@ def _print_help_header() -> None:
     print("  -h, --help   Show this message")
     print("  --version    Show version")
     print("")
-    print("Requer root (execute via `sudo bash install.sh`).")
+    print("Requires root (run via `sudo bash install.sh`).")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -61,7 +66,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", dest="dry_run", action="store_true",
                    help="Simulate without modifying the system")
     p.add_argument("--verbose", action="store_true", help="Enable DEBUG logs")
-    p.add_argument("--quiet", action="store_true", help="Suppress INFO, keep ERROR/STEP")
+    p.add_argument("--quiet", action="store_true",
+                   help="Suppress INFO, keep ERROR/STEP")
     p.add_argument("--force", action="store_true",
                    help="Re-run modules already marked done (ignore state.json)")
     p.add_argument("--no-color", action="store_true",
@@ -115,9 +121,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         runner.run_all()
     except Exception as exc:
-        fatal(f"Installer falhou: {exc}")
+        fatal(f"Installer failed: {exc}")
 
-    log("success", "Instalação Arch-gabrln concluída com sucesso.")
+    log("success", "Arch-gabrln installation completed successfully.")
     return 0
 
 

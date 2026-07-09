@@ -5,9 +5,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
-from installer.errors import fatal
+from installer.errors import fatal, ModuleFailure
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.progress import make_progress
@@ -25,8 +24,8 @@ class ModuleRunner:
 
     def __init__(
         self,
-        modules: List[Module],
-        options: Optional[RunnerOptions] = None,
+        modules: list[Module],
+        options: RunnerOptions | None = None,
     ):
         self.modules = modules
         self.options = options or RunnerOptions()
@@ -43,35 +42,41 @@ class ModuleRunner:
             self._loop(ctx, progress=None)
 
     def _loop(self, ctx: RunContext, progress) -> None:
-        for idx, module in enumerate(self.modules):
+        for module in self.modules:
             manifest_path = self._resolve_manifest(module)
 
+            task = None
             if progress is not None:
                 task = progress.add_task(module.name, total=1)
 
             try:
-                if not self.options.force and self.state.is_up_to_date(module.name, manifest_path):
-                    log("info", f"Módulo {module.name} já está atualizado. Pulando.")
+                if not self.options.force and \
+                        self.state.is_up_to_date(module.name, manifest_path):
+                    log("info", f"Module {module.name} already up to date. Skipping.")
                 elif self.options.dry_run:
-                    log("step", f"[dry-run] {module.name} seria executado")
+                    log("step", f"[dry-run] {module.name} would be executed")
                 else:
-                    log("step", f"Executando módulo {module.name}")
+                    log("step", f"Running module {module.name}")
                     module.pre_check(ctx)
                     module.run(ctx)
                     module.post_check(ctx)
                     self.state.mark_done(module.name, manifest_path)
+            except ModuleFailure as exc:
+                self.state.mark_failed(exc.module_name, exc.reason)
+                fatal(str(exc))
             except Exception as exc:
                 self.state.mark_failed(module.name, str(exc))
-                fatal(f"Módulo {module.name} falhou: {exc}")
+                fatal(f"Module {module.name} failed: {exc}")
             finally:
-                if progress is not None:
+                if progress is not None and task is not None:
                     progress.update(task, completed=1)
 
     def _build_context(self) -> RunContext:
         real_user = os.environ.get("SUDO_USER", "")
         user_home = os.environ.get("USER_HOME", "")
         if not real_user or not user_home:
-            # detect_real_user should have set these
+            # detect_real_user should have set these; fall back to
+            # repo-relative defaults if not (e.g. running --help).
             from installer.config import STATE_DIR as _sd
             real_user = real_user or "root"
             user_home = user_home or str(Path(_sd).parent)
@@ -81,7 +86,7 @@ class ModuleRunner:
             state=self.state,
         )
 
-    def _resolve_manifest(self, module: Module) -> Optional[Path]:
+    def _resolve_manifest(self, module: Module) -> Path | None:
         if not module.manifest:
             return None
         from installer.config import MANIFESTS_DIR

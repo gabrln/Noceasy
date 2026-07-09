@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import subprocess
-from pathlib import Path
-
 from installer.errors import fatal
+from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import is_command, pkg_installed
@@ -16,31 +14,25 @@ class PacmanBootstrapModule(Module):
     name = "02-pacman-bootstrap"
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Sincronizando base de dados do Pacman...")
-        subprocess.run(["pacman", "-Sy"], check=False, capture_output=True)
+        log("info", "Syncing pacman database...")
+        run(["pacman", "-Sy"])
 
-        log("info", "Garantindo pacotes de bootstrap...")
-        pkgs = get_cache().get_list("config.toml", "install.bootstrap_packages")
-        # Filter empty
-        pkgs = [p for p in pkgs if p]
+        log("info", "Ensuring bootstrap packages...")
+        pkgs = [p for p in
+                get_cache().get_list("config.toml", "install.bootstrap_packages")
+                if p]
         if pkgs:
-            subprocess.run(
-                ["pacman", "-S", "--needed", "--noconfirm", *pkgs],
-                check=False, capture_output=True,
-            )
+            run(["pacman", "-S", "--needed", "--noconfirm", *pkgs])
 
-        log("info", "Garantindo yay (AUR helper)...")
+        log("info", "Ensuring yay (AUR helper)...")
         if pkg_installed("yay"):
-            log("success", "yay já está instalado.")
+            log("success", "yay is already installed.")
         else:
-            log("warn", "yay não encontrado. Instalando via pacman (repo cachyos)...")
-            if subprocess.run(
-                ["pacman", "-S", "--needed", "--noconfirm", "yay"],
-                check=False,
-            ).returncode != 0:
-                fatal("Falha ao instalar yay. Verifique [cachyos] em /etc/pacman.conf.")
+            log("warn", "yay not found. Installing via pacman (cachyos repo)...")
+            if run(["pacman", "-S", "--needed", "--noconfirm", "yay"]).returncode != 0:
+                fatal("Failed to install yay. Check [cachyos] in /etc/pacman.conf.")
 
         if not is_command("yay"):
-            fatal("yay não está disponível após a tentativa de instalação.")
+            fatal("yay is not available after the install attempt.")
 
-        log("success", "Bootstrap concluído.")
+        log("success", "Bootstrap completed.")

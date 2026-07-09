@@ -14,11 +14,11 @@ class BackupModule(Module):
 
     def run(self, ctx: RunContext) -> None:
         if get_config("flags.auto_backup", "true") != "true":
-            log("info", "Backup automático desabilitado. Pulando.")
+            log("info", "Auto backup disabled. Skipping.")
             return
-        log("info", "Criando snapshot das configurações atuais...")
+        log("info", "Creating snapshot of current configurations...")
         name = backup_user_files()
         if name:
-            log("success", f"Snapshot criado: {name}")
+            log("success", f"Snapshot created: {name}")
         else:
-            log("warn", "Nenhum arquivo para backupear.")
+            log("warn", "No files to back up.")

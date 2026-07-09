@@ -5,13 +5,42 @@ from __future__ import annotations
 import atexit
 import signal
 import sys
-import traceback
-from typing import Callable, List
+from typing import Callable
 
 from installer.logger import log
 
 
-_cleanup_hooks: List[Callable[[], None]] = []
+class InstallerError(Exception):
+    """Base exception for installer-specific failures.
+
+    The Runner catches this and calls fatal(). Subclasses provide
+    more specific context (network, permission, module failure).
+    """
+    pass
+
+
+class ModuleFailure(InstallerError):
+    """Raised by a Module.run() to signal failure with context."""
+    def __init__(self, module_name: str, reason: str):
+        super().__init__(f"Module {module_name} failed: {reason}")
+        self.module_name = module_name
+        self.reason = reason
+
+
+class NetworkError(InstallerError):
+    """Raised when a network operation fails after retries."""
+    pass
+
+
+class PermissionError_(InstallerError):
+    """Raised when a privilege-related operation fails.
+
+    Named with underscore to avoid shadowing builtin PermissionError.
+    """
+    pass
+
+
+_cleanup_hooks: list[Callable[[], None]] = []
 
 
 def register_cleanup(fn: Callable[[], None]) -> None:
@@ -25,7 +54,7 @@ def run_cleanup() -> None:
         try:
             hook()
         except Exception as exc:
-            log("debug", f"cleanup hook falhou: {exc}")
+            log("debug", f"cleanup hook failed: {exc}")
 
 
 def fatal(message: str, code: int = 1) -> None:
@@ -35,9 +64,9 @@ def fatal(message: str, code: int = 1) -> None:
     sys.exit(code)
 
 
-# Exit codes that are NOT considered fatal (e.g. `command -v` returns 1
-# when a binary is missing; that's expected and shouldn't trigger cleanup
-# of state).
+# Exit codes that are NOT considered fatal (e.g. `command -v` returns
+# 1 when a binary is missing; that's expected and shouldn't trigger
+# cleanup of state).
 _BENIGN_EXIT_CODES = {1, 2, 3, 64, 130, 141}
 
 
@@ -45,14 +74,14 @@ def is_benign_exit(code: int) -> bool:
     return code in _BENIGN_EXIT_CODES
 
 
-def _on_sigint(signum, frame):
-    log("warn", f"Sinal {signum} recebido. Cancelando...")
+def _on_signal(signum, frame):
+    log("warn", f"Signal {signum} received. Cancelling...")
     run_cleanup()
     sys.exit(130)
 
 
 def install_signal_handlers() -> None:
     """Trap SIGINT/SIGTERM for clean cancellation."""
-    signal.signal(signal.SIGINT, _on_sigint)
-    signal.signal(signal.SIGTERM, _on_sigint)
+    signal.signal(signal.SIGINT, _on_signal)
+    signal.signal(signal.SIGTERM, _on_signal)
     atexit.register(run_cleanup)

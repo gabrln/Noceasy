@@ -171,9 +171,10 @@ Os 16 módulos são executados em ordem fixa. O campo `manifest` indica o arquiv
 | Arquivo | Responsabilidade |
 |---|---|
 | `cli.py` | argparse, main(), help |
-| `config.py` | Paths (REPO_DIR, INSTALLER_DIR, etc), loader de config.toml |
+| `config.py` | Paths (REPO_DIR, INSTALLER_DIR, etc), loader de config.toml, tunable constants |
 | `logger.py` | Rich-based logging com NO_COLOR, TTY, níveis |
-| `errors.py` | `fatal()`, `install_signal_handlers()`, cleanup hooks |
+| `errors.py` | `fatal()`, `install_signal_handlers()`, cleanup hooks, `InstallerError` hierarchy |
+| `exec.py` | `run()`, `run_capture()`, `run_or_die()` subprocess helpers |
 | `privilege.py` | `run_as_user`, `detect_real_user`, `setup_polkit_policy`, `cleanup_polkit_policy` |
 | `toml_cache.py` | `TomlCache` em memória (chamado 1x por manifesto) |
 | `state.py` | `State` (state.json com flock + os.replace atômico) |
@@ -190,26 +191,38 @@ Os 16 módulos são executados em ordem fixa. O campo `manifest` indica o arquiv
 ### Esqueleto de módulo
 
 ```python
-from installer.modules.base import Module, RunContext
+from installer.errors import ModuleFailure
+from installer.exec import run
 from installer.logger import log
+from installer.modules.base import Module, RunContext
+
 
 class MyModule(Module):
     name = "NN-my-module"
-    manifest = "my-manifest.toml"  # opcional
+    manifest = "my-manifest.toml"  # optional
+
+    def pre_check(self, ctx: RunContext) -> bool:
+        # Return False to skip. Use for preconditions.
+        return True
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Iniciando ...")
-        # ctx.real_user, ctx.user_home, ctx.state
-        # raise Exception em caso de erro
-        log("success", "Concluído.")
+        log("info", "Starting ...")
+        # Use run() for subprocess, run_as_user() for drop privilege.
+        # Raise ModuleFailure on error for clean reporting.
+        proc = run(["some-command", "--flag"])
+        if proc.returncode != 0:
+            raise ModuleFailure(self.name, f"some-command failed: {proc.stderr}")
+        log("success", "Done.")
 ```
 
-**Convenções:**
+**Conventions:**
 - Use `log("info"|"warn"|"error"|"success"|"step"|"debug", msg)`.
-- Use `ctx.real_user` em vez de `os.environ["SUDO_USER"]`.
-- Use `is_command()`, `pkg_installed()`, `systemd_unit_exists()` para checks.
-- Use `run_as_user(cmd, user=ctx.real_user)` para drop de privilégio.
-- O state (skip-if-done) é gerenciado pelo `Runner` automaticamente baseado no `manifest`.
+- Use `ctx.real_user` instead of `os.environ["SUDO_USER"]`.
+- Use `is_command()`, `pkg_installed()`, `systemd_unit_exists()` for checks.
+- Use `run_as_user(cmd, user=ctx.real_user)` to drop privileges.
+- Use `run(argv)` for subprocess calls (in `installer/exec.py`).
+- Raise `ModuleFailure(self.name, reason)` on clean failures.
+- The state (skip-if-done) is managed by the `Runner` automatically based on `manifest`.
 
 ## Como adicionar um manifesto
 
@@ -235,32 +248,35 @@ Templates em `installer/polkit/`:
 
 Para adicionar um subcomando, edite `installer/polkit/gabrln-helper` e adicione um novo `case` no dispatch.
 
-## Validação
+## Validation
 
 ```bash
-# Sintaxe Python
+# Python syntax
 python3 -c "import ast, pathlib; [ast.parse(p.read_text()) for p in pathlib.Path('installer').rglob('*.py')]"
 
 # Help
 NO_COLOR=1 python3 -m installer --help
 
-# Verificar pipeline
+# Verify pipeline
 python3 -c "from installer.modules import build_default_pipeline; print(len(build_default_pipeline()))"
 
-# Dry-run (precisa root)
+# Dry-run (needs root)
 NO_COLOR=1 sudo python3 -m installer --dry-run
 ```
 
-## Fluxo de erro
+## Error flow
 
 ```
-módulo.run() raise Exception
+module.run() raises Exception (or ModuleFailure)
   ↓
-Runner captura, state.mark_failed()
+Runner catches it, state.mark_failed(module, reason)
   ↓
-errors.fatal("Módulo X falhou: ...")
+errors.fatal("Module X failed: ...")
   ↓
 run_cleanup() (polkit rules + log file close)
   ↓
 sys.exit(1)
 ```
+
+`is_benign_exit(code)` in `errors.py` filters benign exit codes
+(1, 2, 3, 64, 130, 141) that should not trigger heavy cleanup.

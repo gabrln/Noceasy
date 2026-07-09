@@ -1,10 +1,13 @@
 """Rich-based logging.
 
-Respects NO_COLOR (https://no-color.org/), TERM=dumb, and TTY detection.
-Levels: DEBUG, INFO, WARN, ERROR, STEP, SUCCESS.
+Respects NO_COLOR (https://no-color.org/), TERM=dumb, and TTY
+detection. Levels: DEBUG, INFO, WARN, ERROR, STEP, SUCCESS.
 
 The single public API is `log(level, message)`. Internally delegates
-to a Rich Console + a file handler for the persistent log.
+to a Rich Console (TTY) + a file handler (persistent log).
+
+Note: setup_logging() is not thread-safe. The installer is
+single-threaded so this is fine in practice.
 """
 
 from __future__ import annotations
@@ -14,10 +17,9 @@ import sys
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
-from typing import Optional
+
 
 from rich.console import Console
-from rich.logging import RichHandler
 
 
 class LogLevel(IntEnum):
@@ -36,26 +38,27 @@ _LEVEL_NAMES = {
     "cmd": "EXEC",
 }
 
-_LEVEL_PRIORITY = {
-    "debug": 0,
-    "info": 1,
-    "success": 1,
-    "step": 1,    # STEP always shown unless QUIET
-    "warn": 2,
-    "error": 3,
-    "cmd": 0,
+
+_STYLES = {
+    "debug":   "dim",
+    "info":    "cyan",
+    "success": "bold green",
+    "step":    "bold magenta",
+    "warn":    "yellow",
+    "error":   "bold red",
+    "cmd":     "dim blue",
 }
 
 
 @dataclass
 class _LogState:
     console: Console
-    file_console: Optional[Console]
+    file_console: Console | None
     level: LogLevel
-    log_file: Optional[Path]
+    log_file: Path | None
 
 
-_state: Optional[_LogState] = None
+_state: _LogState | None = None
 
 
 def _use_color() -> bool:
@@ -66,8 +69,13 @@ def _use_color() -> bool:
     return sys.stderr.isatty()
 
 
+def _timestamp() -> str:
+    from datetime import datetime
+    return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
 def setup_logging(log_dir: Path, level: LogLevel = LogLevel.NORMAL) -> None:
-    """Initialize the global logger. Idempotent."""
+    """Initialize the global logger. Idempotent (not thread-safe)."""
     global _state
     if _state is not None:
         return
@@ -93,11 +101,6 @@ def setup_logging(log_dir: Path, level: LogLevel = LogLevel.NORMAL) -> None:
                        level=level, log_file=log_file)
 
 
-def _timestamp() -> str:
-    from datetime import datetime
-    return datetime.now().strftime("%Y%m%d-%H%M%S")
-
-
 def _should_print(level_name: str) -> bool:
     assert _state is not None
     if _state.level == LogLevel.QUIET and level_name not in ("error", "step"):
@@ -105,17 +108,6 @@ def _should_print(level_name: str) -> bool:
     if level_name == "debug" and _state.level < LogLevel.DEBUG:
         return False
     return True
-
-
-_STYLES = {
-    "debug":   "dim",
-    "info":    "cyan",
-    "success": "bold green",
-    "step":    "bold magenta",
-    "warn":    "yellow",
-    "error":   "bold red",
-    "cmd":     "dim blue",
-}
 
 
 def log(level: str, message: str) -> None:
@@ -140,7 +132,7 @@ def log(level: str, message: str) -> None:
                               highlight=False)
 
 
-def get_log_file() -> Optional[Path]:
+def get_log_file() -> Path | None:
     if _state is None:
         return None
     return _state.log_file

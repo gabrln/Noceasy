@@ -2,44 +2,39 @@
 
 from __future__ import annotations
 
-import subprocess
+import shutil
 from pathlib import Path
-from typing import List
+
 
 from installer.errors import fatal
+from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.toml_cache import get_cache
 
 
+_CRITICAL_PACKAGES = {"zsh", "base", "base-devel", "git"}
+
+
 def _cachyos_present() -> bool:
-    try:
-        out = subprocess.run(
-            ["pacman", "-Qq"],
-            check=True, capture_output=True, text=True, timeout=10,
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-        return False
-    installed = out.stdout.split()
-    if any(p.startswith("linux-cachyos") for p in installed):
+    """True if the system is CachyOS (kernel installed or repo enabled)."""
+    out = run(["pacman", "-Qq"], timeout=10)
+    if out.returncode == 0 and any(
+            p.startswith("linux-cachyos") for p in out.stdout.split()):
         return True
-    # Check pacman.conf for [cachyos] section
     conf = Path("/etc/pacman.conf")
     if conf.is_file():
         return "[cachyos" in conf.read_text()
     return False
 
 
-def _pacman_missing(pkgs: List[str]) -> List[str]:
-    try:
-        out = subprocess.run(
-            ["pacman", "-T", *pkgs],
-            check=False, capture_output=True, text=True,
-        )
-        missing = out.stdout.strip().split()
-        return missing
-    except FileNotFoundError:
-        return []
+def _pacman_missing(pkgs: list[str]) -> list[str]:
+    out = run(["pacman", "-T", *pkgs])
+    return out.stdout.strip().split() if out.stdout else []
+
+
+def _which(name: str) -> bool:
+    return shutil.which(name) is not None
 
 
 class PacmanOfficialModule(Module):
@@ -47,49 +42,39 @@ class PacmanOfficialModule(Module):
     manifest = "packages.toml"
 
     def run(self, ctx: RunContext) -> None:
-        log("info", "Lendo pacotes oficiais do manifesto...")
+        log("info", "Reading official packages from manifest...")
         pkgs = get_cache().get_list_field("packages.toml", "packages", "name")
 
         # Filter linux-cachyos* if not on CachyOS
         if not _cachyos_present():
-            log("info", "Sistema não é CachyOS; filtrando pacotes linux-cachyos*.")
+            log("info",
+                "System is not CachyOS; filtering out linux-cachyos* packages.")
             pkgs = [p for p in pkgs if not p.startswith("linux-cachyos")]
 
         if not pkgs:
-            log("warn", "Nenhum pacote oficial a instalar.")
+            log("warn", "No official packages to install.")
             return
 
-        log("info", "Verificando pacotes já instalados...")
+        log("info", "Checking installed packages...")
         missing = _pacman_missing(pkgs)
         if not missing:
-            log("success", "Todos os pacotes oficiais já estão instalados.")
+            log("success", "All official packages are already installed.")
             return
 
-        log("info", f"Instalando pacotes oficiais pendentes: {' '.join(missing)}")
-        if subprocess.run(
-            ["pacman", "-S", "--needed", "--noconfirm", *missing],
-            check=False,
-        ).returncode != 0:
-            log("warn", "pacman retornou erro. Tentando um por um...")
+        log("info", f"Installing missing official packages: {' '.join(missing)}")
+        if run(["pacman", "-S", "--needed", "--noconfirm", *missing]).returncode != 0:
+            log("warn", "pacman returned an error. Trying one by one...")
             for pkg in missing:
-                subprocess.run(["pacman", "-S", "--needed", "--noconfirm", pkg],
-                                check=False, capture_output=True)
+                run(["pacman", "-S", "--needed", "--noconfirm", pkg])
 
-        # Verify
         still_missing = _pacman_missing(missing)
         if still_missing:
-            log("warn", f"Pacotes ainda ausentes: {' '.join(still_missing)}")
-            critical = [p for p in still_missing if p in ("zsh", "base", "base-devel", "git")]
+            log("warn", f"Still missing: {' '.join(still_missing)}")
+            critical = [p for p in still_missing if p in _CRITICAL_PACKAGES]
             if critical:
-                fatal(f"Pacotes críticos ausentes: {' '.join(critical)}")
+                fatal(f"Critical packages still missing: {' '.join(critical)}")
 
-        # zsh must be present
-        if not Path("/usr/bin/zsh").exists() and not _which("zsh"):
-            fatal("zsh ausente após instalação de pacotes oficiais.")
+        if not _which("zsh") and not Path("/usr/bin/zsh").exists():
+            fatal("zsh missing after official packages install.")
 
-        log("success", "Pacotes oficiais instalados e confirmados.")
-
-
-def _which(name: str) -> bool:
-    import shutil
-    return shutil.which(name) is not None
+        log("success", "Official packages installed and confirmed.")
