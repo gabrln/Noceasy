@@ -87,9 +87,8 @@ class ModuleRunner:
 
         tui.stop()
         from rich.console import Console
-        from installer.progress import TOKYO_NIGHT as c
         Console(stderr=False).print(
-            f"\n[bold {c['success']}]✓ All {total} modules processed successfully.[/bold {c['success']}]"
+            f"\n[bold green]✓ All {total} modules processed successfully.[/bold green]"
         )
 
     # ── Helpers ─────────────────────────────────────────────────────

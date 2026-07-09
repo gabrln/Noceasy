@@ -32,30 +32,23 @@ import time
 from dataclasses import dataclass, field
 
 
-# ── Tokyo Night palette (https://github.com/enkia/tokyo-night-vscode-theme) ──
+# ── Color support detection ──────────────────────────────────────────
 
-TOKYO_NIGHT = {
-    "bg":          "#1a1b26",
-    # The panel's own interior background. Deliberately a shade or two
-    # LIGHTER than "bg" — most terminal themes already default to a
-    # near-black background close to #1a1b26, which makes the panel
-    # invisible except for its border in a screenshot/low-contrast
-    # display. bg_highlight (Tokyo Night's own name for this tone)
-    # reads as a clearly distinct "boxed" surface regardless of the
-    # terminal's default background.
-    "panel_bg":    "#292e42",
-    "fg":          "#c0caf5",
-    "fg_dark":     "#a9b1d6",
-    "comment":     "#565f89",
-    "border":      "#7aa2f7",  # blue
-    "border_error": "#f7768e",  # red
-    "title":       "#bb9af7",  # magenta
-    "success":     "#9ece6a",  # green
-    "error":       "#f7768e",  # red
-    "warning":     "#e0af68",  # yellow
-    "cyan":        "#7dcfff",
-    "track":       "#3b4261",  # bar track (unfilled)
-}
+def _supports_truecolor() -> bool:
+    """Return True if the terminal advertises 24-bit color support.
+
+    Under `curl | sudo bash` the locale/TERM may be minimal and
+    Rich's auto-detection can downgrade to no-color.  But we must
+    NOT force truecolor unconditionally: Linux virtual consoles
+    (tty1–tty6) and some emulators do not understand 24-bit ANSI
+    sequences.  On those terminals, hex-RGB styles render as garbage
+    or invisible text on a black background.
+
+    COLORTERM=truecolor|24bit is the standard signal (used by
+    kitty, alacritty, foot, iTerm2, Windows Terminal, etc.).
+    """
+    return os.environ.get("COLORTERM", "") in ("truecolor", "24bit")
+
 
 # Panel size: terminals are character cells, not pixels, so a literal
 # "900x900" box has no direct equivalent. We instead pick a fixed
@@ -158,13 +151,30 @@ def parse_marker(line: str, state: ProgressState) -> bool:
 
 # ── LivePanelRenderer ────────────────────────────────────────────────
 
+# Rich named styles — work on any terminal with at least 8 colors.
+# No hex/RGB values; everything maps to the standard ANSI palette.
+# On truecolor terminals Rich will still render them correctly; on
+# 16-color terminals they degrade gracefully to the closest match.
+_STYLE_BORDER      = "bold blue"
+_STYLE_BORDER_ERR  = "bold red"
+_STYLE_TITLE       = "bold magenta"
+_STYLE_STEP        = "bold cyan"
+_STYLE_CMD         = "dim"
+_STYLE_ERROR       = "bold red"
+_STYLE_COMMENT     = "dim"
+_STYLE_OUTPUT      = "dim white"
+_STYLE_SUCCESS     = "bold green"
+
+
 class LivePanelRenderer:
     """Builds the Rich renderable from ProgressState + Progress.
 
     This is the only class that imports Rich. Everything else
     (ProgressState, MarkerParser, OutputCapture) is Rich-free.
 
-    Styling follows the Tokyo Night palette (see TOKYO_NIGHT).
+    Uses only Rich named styles (no hex/RGB) so the panel renders
+    correctly on any terminal, including Linux virtual consoles
+    (tty1–tty6) and emulators without truecolor support.
     """
 
     def __init__(self, state: ProgressState, progress,
@@ -183,8 +193,6 @@ class LivePanelRenderer:
         from rich.console import Group
         from rich.text import Text
 
-        c = TOKYO_NIGHT
-
         # ── Header: fixed number of rows regardless of state, so the
         # scrolling output area below always starts at the same row.
         # Rows not currently "in use" (e.g. no error, no cmd yet) are
@@ -198,20 +206,20 @@ class LivePanelRenderer:
         header.append(Text(""))
 
         if self._state.error:
-            header.append(Text(f"✗ {self._state.error}", style=f"bold {c['error']}",
+            header.append(Text(f"✗ {self._state.error}", style=_STYLE_ERROR,
                                 no_wrap=True, overflow="ellipsis"))
         else:
             header.append(Text(""))
         header.append(Text(""))
 
         if self._state.cmd:
-            header.append(Text(f"$ {self._state.cmd}", style=c["comment"],
+            header.append(Text(f"$ {self._state.cmd}", style=_STYLE_CMD,
                                 no_wrap=True, overflow="ellipsis"))
         else:
             header.append(Text(""))
         header.append(Text(""))
 
-        header.append(Text("Live Output:", style=f"bold {c['comment']}"))
+        header.append(Text("Live Output:", style=f"bold {_STYLE_COMMENT}"))
 
         # ── Scrolling output area: anchored to the BOTTOM border.
         # Newest lines appear at the bottom; as more arrive, older
@@ -236,28 +244,23 @@ class LivePanelRenderer:
         # the fixed row budget the bottom-anchoring math above relies
         # on, causing the panel to jitter/grow.
         output = pad + [
-            Text(f"  {line}", style=c["fg_dark"], no_wrap=True, overflow="ellipsis")
+            Text(f"  {line}", style=_STYLE_OUTPUT, no_wrap=True, overflow="ellipsis")
             for line in visible
         ]
 
         parts = header + output
 
-        border = c["border_error"] if self._state.error else c["border"]
+        border = _STYLE_BORDER_ERR if self._state.error else _STYLE_BORDER
         title = (
-            f"[bold {c['title']}]Noceasy Installer[/bold {c['title']}] "
-            f"[{c['comment']}]{self._state.module_idx}/{self._state.total_modules}[/{c['comment']}]"
+            f"[{_STYLE_TITLE}]Noceasy Installer[/{_STYLE_TITLE}] "
+            f"[{_STYLE_COMMENT}]{self._state.module_idx}/{self._state.total_modules}[/{_STYLE_COMMENT}]"
         )
-        # style=fg-on-bg paints the WHOLE panel interior with the theme's
-        # panel background + light foreground, so it reads as a distinct
-        # "boxed" area rather than just a colored border on the
-        # terminal's own (unstyled, near-black) background.
         panel = Panel(
             Group(*parts),
             title=title,
             border_style=border,
             width=self._width,
             height=self._box_height,
-            style=f"{c['fg']} on {c['panel_bg']}",
         )
         # Center horizontally AND vertically within the terminal.
         # Align needs an explicit height to center vertically —
@@ -393,16 +396,20 @@ class LiveDisplay:
         # Fix: capture the real stdout now (before any swap) and
         # pin the Console to that exact file handle.
         real_stdout = sys.stdout
-        # force_terminal=True only bypasses the isatty() check; it does
-        # NOT guarantee color rendering. Under `sudo` (especially via
-        # `curl | sudo bash`), the environment may lack a proper
-        # locale/TERM, causing Rich's "auto" color_system detection to
-        # downgrade to no-color. Force truecolor explicitly since the
-        # Tokyo Night palette uses hex/RGB colors.
+
+        # Detect truecolor support via COLORTERM.  Forcing
+        # color_system="truecolor" unconditionally breaks Linux
+        # virtual consoles (tty1–tty6) and emulators without
+        # 24-bit support: hex-RGB styles render as invisible text
+        # on a black background.  Fall back to "standard" (16
+        # colors, universally supported) when COLORTERM is absent
+        # or does not advertise truecolor/24bit.
+        color_system = "truecolor" if _supports_truecolor() else "standard"
+
         self._console = Console(
             file=real_stdout,
             force_terminal=True,
-            color_system="truecolor",
+            color_system=color_system,
         )
 
         # Fit the panel width to the terminal (shrink on narrow
@@ -413,14 +420,13 @@ class LiveDisplay:
         self._panel_width = max(40, min(PANEL_WIDTH, term_cols - 4))
         self._term_rows = term_rows
 
-        c = TOKYO_NIGHT
         self._progress = Progress(
-            SpinnerColumn(style=c["border"]),
-            TextColumn(f"[bold {c['cyan']}]{{task.description}}"),
-            BarColumn(bar_width=30, complete_style=c["border"],
-                     finished_style=c["success"], style=c["track"]),
-            TextColumn(f"[{c['comment']}]" + "{task.percentage:>3.0f}%"),
-            TextColumn(f"[{c['comment']}]" + "({task.completed}/{task.total})"),
+            SpinnerColumn(),
+            TextColumn("[bold cyan]{task.description}"),
+            BarColumn(bar_width=30, complete_style="blue",
+                       finished_style="green", style="dim"),
+            TextColumn("[dim]{task.percentage:>3.0f}%[/dim]"),
+            TextColumn("[dim]({task.completed}/{task.total})[/dim]"),
             transient=False,
             console=self._console,
         )
@@ -522,13 +528,6 @@ class LiveDisplay:
             self._live.update(self._render())
 
     def _render(self):
-        # ProgressState (self._state) is the single source of truth
-        # for task_total/task_done — it is never read back from
-        # rich.progress.Progress. (Progress.tasks is a plain list in
-        # insertion order; indexing it with a TaskID, as a previous
-        # version of this code did, crashes with "list index out of
-        # range" as soon as a task is removed and TaskIDs no longer
-        # line up with list positions.)
         renderer = LivePanelRenderer(
             self._state, self._progress,
             width=self._panel_width,
