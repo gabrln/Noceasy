@@ -15,7 +15,7 @@ from installer.config import (
     NETWORK_RETRY_BASE_SECONDS,
 )
 from installer.logger import log
-from installer.privilege import run_as_user
+
 from installer.toml_cache import get_cache
 
 

@@ -6,7 +6,7 @@ from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import chown_user, is_command
-from installer.privilege import run_as_user
+from installer import privesc
 
 
 class IconsCursorsFontsModule(Module):
@@ -25,9 +25,9 @@ class IconsCursorsFontsModule(Module):
             log("info", "Updating gtk icon cache...")
             for d in icons_dir.iterdir():
                 if d.is_dir():
-                    run_as_user(
-                        f"gtk-update-icon-cache -f -t '{d}' 2>/dev/null || true",
-                        user=ctx.real_user, check=False,
+                    privesc.run_privileged(
+                        ["bash", "-c", f"gtk-update-icon-cache -f -t '{d}' 2>/dev/null || true"],
+                        ctx.sudo_password,
                     )
 
         log("success", "Font and icon cache updated.")

@@ -6,7 +6,6 @@ pattern that appears in 14+ files. Provides:
   - run(): the standard "fire and forget with logging" pattern
   - run_capture(): same but always captures output (returns it)
   - run_or_die(): like run() but exits via fatal() on failure
-  - run_user(): shorthand for run_as_user() (re-export)
 
 Use this when you want consistent timeout/capture/logging behavior
 across the framework. For ad-hoc commands with specific return
@@ -21,7 +20,6 @@ from typing import Mapping, Sequence
 
 from installer.errors import fatal
 from installer.logger import log
-from installer.privilege import run_as_user
 
 
 def run(
@@ -74,4 +72,4 @@ def run_or_die(
 
 
 # Re-export for convenience
-__all__ = ["run", "run_capture", "run_or_die", "run_as_user"]
+__all__ = ["run", "run_capture", "run_or_die"]

@@ -11,7 +11,7 @@ from installer.config import get_config
 from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
-from installer.privilege import run_as_user
+from installer import privesc
 from installer.toml_cache import get_cache
 
 
@@ -146,9 +146,9 @@ class WallpapersModule(Module):
             return
 
         log("info", f"Extracting {size // (1024 * 1024)} MB to {wp_dir}...")
-        run_as_user(
-            f"unzip -o -j '{wp_tmp}' -d '{wp_dir}' 2>/dev/null || true",
-            user=ctx.real_user, check=False,
+        privesc.run_privileged(
+            ["bash", "-c", f"unzip -o -j '{wp_tmp}' -d '{wp_dir}' 2>/dev/null || true"],
+            ctx.sudo_password,
         )
         wp_tmp.unlink(missing_ok=True)
         log("success", f"Wallpapers extracted to {wp_dir}.")
