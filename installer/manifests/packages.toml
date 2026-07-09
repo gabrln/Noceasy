@@ -120,7 +120,15 @@ description = "Display manager"
 [[packages]]
 name = "polkit"
 group = "display"
-description = "PolicyKit"
+description = "PolicyKit daemon (pkexec)"
+
+# Polkit precisa de um agent rodando na sessão do usuário para
+# abrir prompts. gnome-shell traz polkit-gnome como dep. Em outras
+# composições (Hyprland puro), instale polkit-gnome explicitamente.
+[[packages]]
+name = "polkit-gnome"
+group = "display"
+description = "Polkit agent (GNOME) — exibe prompts de autenticação"
 
 [[packages]]
 name = "atuin"

@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# gabrln-helper - Helper binary invocado via pkexec pelo polkit
+#
+# Este binário vive em /usr/local/bin/ e é referenciado pela polkit
+# policy (org.archlinux.pkexec.gabrln). Quando o usuário invoca
+# `pkexec gabrln-helper <subcommand> [args]`, o polkit checa a rule
+# em /etc/polkit-1/rules.d/99-arch-gabrln-installer.rules, e se o
+# subject for REAL_USER e a rule retornar YES, executa este script
+# como root sem prompt de senha.
+#
+# Subcomandos disponíveis:
+#   refresh-icon-cache    Atualiza gtk-update-icon-cache
+#   update-hyprpm         hyprpm update -v
+#   enable-service <svc>  systemctl enable <svc>
+#   restart-user-service  systemctl --user restart
+#   set-shell <user>      chsh -s /usr/bin/zsh <user>
+#
+# IMPORTANTE: Este helper é desenhado para ser invoked APENAS pelo
+# usuário configurado em REAL_USER. O polkit policy garante isso
+# via subject.user check.
+
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+  echo "ERRO: gabrln-helper deve ser invocado via pkexec." >&2
+  exit 1
+fi
+
+log() { echo "[gabrln-helper] $*"; }
+die() { echo "ERRO: $*" >&2; exit "${2:-1}"; }
+
+cmd="${1:-help}"
+shift 2>/dev/null || true
+
+case "$cmd" in
+  refresh-icon-cache)
+    log "Atualizando cache de ícones..."
+    for dir in /usr/share/icons/*/ /home/*/.local/share/icons/*/; do
+      [[ -d "$dir" ]] || continue
+      gtk-update-icon-cache -f -t "$dir" 2>/dev/null || true
+    done
+    log "Cache atualizado."
+    ;;
+
+  update-hyprpm)
+    log "Atualizando hyprpm..."
+    command -v hyprpm >/dev/null || die "hyprpm não está instalado."
+    hyprpm update -v
+    ;;
+
+  enable-service)
+    svc="${1:-}"
+    [[ -n "$svc" ]] || die "Uso: gabrln-helper enable-service <unit>"
+    log "Habilitando $svc..."
+    systemctl enable "$svc"
+    ;;
+
+  restart-user-service)
+    svc="${1:-}"
+    [[ -n "$svc" ]] || die "Uso: gabrln-helper restart-user-service <unit>"
+    log "Reiniciando user service $svc..."
+    # Pega o UID do owner do display
+    _uid=$(stat -c %u /run/user/* 2>/dev/null | head -1 || true)
+    if [[ -n "$_uid" ]]; then
+      XDG_RUNTIME_DIR="/run/user/$_uid" systemctl --user restart "$svc" || true
+    fi
+    ;;
+
+  set-shell)
+    user="${1:-}"
+    shell="${2:-/usr/bin/zsh}"
+    [[ -n "$user" ]] || die "Uso: gabrln-helper set-shell <user> [shell]"
+    log "Alterando shell de $user para $shell..."
+    chsh -s "$shell" "$user"
+    ;;
+
+  help|--help|-h|"")
+    cat <<EOF
+gabrln-helper — helper invocado via pkexec pela polkit policy
+
+Uso: pkexec gabrln-helper <comando> [args]
+
+Comandos:
+  refresh-icon-cache           Atualiza cache de ícones do sistema
+  update-hyprpm                hyprpm update -v
+  enable-service <unit>        Habilita unit do systemd
+  restart-user-service <unit>  Reinicia user service
+  set-shell <user> [shell]     Altera shell padrão
+  help                         Mostra esta mensagem
+EOF
+    ;;
+
+  *)
+    die "Comando desconhecido: $cmd. Use 'gabrln-helper help'." 2
+    ;;
+esac

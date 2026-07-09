@@ -41,6 +41,13 @@ auto_backup = true
 # Número máximo de backups automáticos retidos (0 = ilimitado)
 max_backups = 3
 
+# Limpar cache TOML e arquivos temporários a cada execução
+cleanup_temp_on_exit = true
+
 [features]
 # Baixar e extrair pacote de wallpapers extras durante a instalação
 wallpapers = true
+
+# Instalar e configurar polkit policy (auto-aprovada para REAL_USER)
+# Requer o pacote 'polkit' + agent (polkit-gnome) instalados.
+enable_polkit_helper = true

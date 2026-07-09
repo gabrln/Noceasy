@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arch-gabrln-installer"
+version = "0.1.0"
+description = "Installer framework for Arch-gabrln (Hyprland + Noctalia v5)"
+requires-python = ">=3.11"
+dependencies = [
+    "rich>=13.7",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["installer*"]
+exclude = ["installer.lib*", "installer.modules.shell*"]
+
+[tool.setuptools.package-data]
+"installer" = ["manifests/*.toml", "polkit/*"]

@@ -1,26 +1,15 @@
 # Arch-gabrln
 
 Ambiente Wayland para Arch/CachyOS: **Hyprland 0.55 + Noctalia V5**.
-Stack de pacotes: `pacman` (oficial CachyOS) · `yay` (AUR) · `flatpak`.
 
 ## Instalação
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo -E bash
+curl -fsSL https://raw.githubusercontent.com/gabrln/Arch-gabrln/main/install.sh | sudo bash
 ```
 
-O instalador clona o repo em `~/Projects/Arch-gabrln` e roda o framework `gabrln`. Requer Arch ou CachyOS.
-
-## Comandos
-
-| Comando | O que faz |
-|---|---|
-| `gabrln install` | Instalação completa (módulos 00–16) |
-| `gabrln update` | Atualiza dotfiles, AUR `-git` e hyprpm |
-| `gabrln repair` | Reaplicar configs divergentes |
-| `gabrln backup` | Snapshot manual das configs |
-| `gabrln rollback` | Restaurar snapshot mais recente |
-| `gabrln doctor` | Diagnóstico read-only |
+Requer Arch ou CachyOS. Roda 16 módulos em ordem, configura o sistema
+completo, e sai.
 
 ## Atalhos principais
 
@@ -30,3 +19,17 @@ O instalador clona o repo em `~/Projects/Arch-gabrln` e roda o framework `gabrln
 - `Super + B` — Firefox
 - `Super + /` — Cheat sheet completo
 - `Super + Q` — Fechar janela
+
+## Problemas comuns
+
+| Sintoma | Solução |
+|---|---|
+| `Distribuição não suportada` | Apenas Arch e CachyOS são suportados |
+| `Python 3.11+ necessário` | `pacman -S python` (Arch já tem 3.12+) |
+| `python-rich não encontrado` | `pacman -S python-rich` |
+| `pacman: unable to find linux-cachyos` | Você está em Arch puro, não CachyOS. O install filtra automaticamente; ignore |
+| `polkit: ... authentication required` | Habilite o agent do polkit no autostart: `polkit-gnome-authentication-agent-1` |
+| `hyprpm: command not found` | hyprland não foi instalado. Rode `gabrln` (install) de novo |
+
+Para erros mais detalhados, veja os logs em `installer/logs/`. Para
+contribuir com o framework, veja `installer/README.md`.
