@@ -95,9 +95,11 @@ class CurlToolsModule(Module):
                 extra_env[env_var] = env_value
 
             # Use login shell so $PATH is set up; pass wrapper via env var
+            # NOTE: $WRAPPER must NOT be quoted — single quotes would
+            # prevent shell expansion, causing 'No such file or directory'.
             cmd = (
                 f"export WRAPPER='{wrapper}'\n"
-                f"exec bash '$WRAPPER' < /dev/null"
+                f"exec bash $WRAPPER < /dev/null"
             )
             proc = run_as_user(
                 ["bash", "-lc", cmd],

@@ -28,6 +28,9 @@ def _atomic_copytree(src: Path, dst: Path, user: str) -> bool:
     always cleaned up.
     """
     staging = Path(tempfile.mkdtemp(prefix="noceasy-dot-"))
+    # mkdtemp() creates as root-owned; chown to target user so that
+    # run_as_user('cp -a ...') can write into it.
+    run(["chown", f"{user}:{user}", str(staging)])
     try:
         proc = run_as_user(
             ["cp", "-a", str(src), str(staging / dst.name)],
