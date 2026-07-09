@@ -33,7 +33,7 @@ from installer.privilege import (
     setup_polkit_policy,
     cleanup_polkit_policy,
 )
-from installer.runner import ModuleRunner
+from installer.runner import ModuleRunner, RunnerOptions
 from installer.modules import build_default_pipeline
 
 
@@ -112,10 +112,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # Build pipeline of modules
     modules = build_default_pipeline()
+    options = RunnerOptions(dry_run=args.dry_run, force=args.force)
     runner = ModuleRunner(
         modules=modules,
-        dry_run=args.dry_run,
-        force=args.force,
+        options=options,
     )
 
     try:
