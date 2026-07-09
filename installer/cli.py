@@ -27,7 +27,7 @@ from pathlib import Path
 from installer import __version__
 from installer.config import INSTALLER_DIR, REPO_DIR, LOGS_DIR
 from installer.errors import install_signal_handlers, fatal
-from installer.logger import LogLevel, setup_logging, log
+from installer.logger import LogLevel, setup_logging, log, set_suppress_stderr
 from installer.privilege import (
     detect_real_user,
     setup_polkit_policy,
@@ -92,13 +92,16 @@ def main(argv: list[str] | None = None) -> int:
         os.environ["NO_COLOR"] = "1"
     setup_logging(log_dir=LOGS_DIR, level=level)
 
+    # Suppress stderr output from the start — the TUI handles all
+    # terminal display. Log messages go to the file only.
+    set_suppress_stderr(True)
+
     log("step", f"Noceasy installer v{__version__}")
     log("info", f"REPO_DIR: {REPO_DIR}")
     log("info", f"INSTALLER_DIR: {INSTALLER_DIR}")
 
     # Signal handlers + cleanup registration
     install_signal_handlers()
-    # Polkit policy will be removed on exit
     import atexit
     atexit.register(cleanup_polkit_policy)
 
