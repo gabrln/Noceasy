@@ -2,8 +2,8 @@
 -- Automações Nativas em Lua (Módulo Lua v0.55+)
 -- =========================================================================
 
--- 1. Troca Automática de Layout (Single vs Multi-monitor)
--- Mantém layout scrolling no padrão para tela única e alterna para dwindle em múltiplos monitores
+-- 1. Automatic Layout Switching (Single vs Multi-monitor)
+-- Keeps scrolling layout as default for single screen, switches to dwindle on multi-monitor
 local function auto_select_layout()
     local monitors = hl.get_monitors()
     if monitors and #monitors > 1 then
@@ -16,7 +16,7 @@ end
 hl.on("monitor.added", auto_select_layout)
 hl.on("monitor.removed", auto_select_layout)
 
--- 2. Modo Jogo Automático (Desativa blur, sombras e animações em jogos)
+-- 2. Auto Game Mode (disables blur, shadows and animations in games)
 local gamemode_active = false
 
 local function update_gamemode()
@@ -24,20 +24,24 @@ local function update_gamemode()
     if not ws then return end
     local windows = hl.get_workspace_windows(ws.name)
     if not windows then return end
-    
+
     local has_game = false
     for _, win in ipairs(windows) do
         local cls = string.lower(win.class or "")
         local title = string.lower(win.title or "")
-        if cls:find("steam_app") or cls:find("gamescope") or cls:find("lutris") or cls:find("heroic") or cls:find("dota") or cls:find("cs2") or cls:find("wine") then
+        -- Anchor matches to the class name boundaries to avoid
+        -- false positives like "autoplace.exe" matching "dota".
+        if cls:find("steam_app") or cls:find("gamescope") or cls:find("lutris")
+            or cls:find("heroic") or cls:find("dota2") or cls:find("cs2")
+            or cls:find("wine") then
             has_game = true
             break
         end
     end
-    
+
     if has_game and not gamemode_active then
         gamemode_active = true
-        hl.exec_cmd("notify-send -t 3000 -a Sistema 'Modo Jogo' 'Ativado automaticamente (efeitos visuais reduzidos)'")
+        hl.exec_cmd("notify-send -t 3000 -a System 'Game Mode' 'Automatically enabled (reduced visual effects)'")
         hl.config({
             decoration = {
                 blur = { enabled = false },
@@ -47,7 +51,7 @@ local function update_gamemode()
         })
     elseif not has_game and gamemode_active then
         gamemode_active = false
-        hl.exec_cmd("notify-send -t 3000 -a Sistema 'Modo Jogo' 'Desativado (efeitos visuais restaurados)'")
+        hl.exec_cmd("notify-send -t 3000 -a System 'Game Mode' 'Disabled (visual effects restored)'")
         hl.config({
             decoration = {
                 blur = { enabled = true },
@@ -62,7 +66,7 @@ hl.on("workspace.active", update_gamemode)
 hl.on("window.destroy", update_gamemode)
 hl.on("window.move_to_workspace", update_gamemode)
 
--- 3. Monitoramento Nativo de Bateria via Timer Lua (Checagem leve a cada 30s)
+-- 3. Native battery monitoring via Lua timer (lightweight 30s check)
 local notified_10 = false
 local notified_20 = false
 
@@ -86,12 +90,10 @@ local function check_battery()
     if stat == "Discharging" then
         if cap <= 10 and not notified_10 then
             notified_10 = true
-            hl.exec_cmd("notify-send -t 10000 -u critical -i battery-empty -a Sistema 'Bateria Crítica!' 'Apenas " .. cap .. "% restante. Conecte o carregador imediatamente.'")
-            hl.exec_cmd("paplay /usr/share/sounds/freedesktop/stereo/dialog-warning.oga 2>/dev/null || true")
+            hl.exec_cmd("notify-send -t 10000 -u critical -i battery-empty -a System 'Critical Battery!' 'Only " .. cap .. "% remaining. Plug in the charger immediately.'")
         elseif cap <= 20 and not notified_20 then
             notified_20 = true
-            hl.exec_cmd("notify-send -t 10000 -u critical -i battery-low -a Sistema 'Bateria Baixa!' 'Meno de 20% (" .. cap .. "%) restante.'")
-            hl.exec_cmd("paplay /usr/share/sounds/freedesktop/stereo/dialog-warning.oga 2>/dev/null || true")
+            hl.exec_cmd("notify-send -t 10000 -u critical -i battery-low -a System 'Low Battery!' 'Less than 20% (" .. cap .. "%) remaining.'")
         end
     elseif stat == "Charging" or stat == "Full" or stat == "Notcharging" then
         if cap > 20 then notified_20 = false end
