@@ -13,7 +13,6 @@ from installer.modules.m02_pacman_bootstrap import PacmanBootstrapModule
 from installer.modules.m03_pacman_official import PacmanOfficialModule
 from installer.modules.m04_yay_aur import YayAurModule
 from installer.modules.m05_flatpak import FlatpakModule
-from installer.modules.m06_curl_tools import CurlToolsModule
 from installer.modules.m07_shell import ShellModule
 from installer.modules.m08_dotfiles import DotfilesModule
 from installer.modules.m09_hyprland_env import HyprlandEnvModule
@@ -35,7 +34,6 @@ def build_default_pipeline() -> list[Module]:
         PacmanOfficialModule(manifest="packages.toml"),
         YayAurModule(manifest="aur.toml"),
         FlatpakModule(manifest="flatpak.toml"),
-        CurlToolsModule(manifest="curl-tools.toml"),
         ShellModule(manifest="zsh-plugins.toml"),
         DotfilesModule(manifest="dotfiles.toml"),
         HyprlandEnvModule(),
