@@ -42,31 +42,47 @@ def _render_frame(
     module_name: str,
     spinner_char: str,
     build_lines: deque[str],
-    width: int = 60,
+    step_text: str = "",
+    cmd_info: str = "",
+    bar_width: int = 30,
 ) -> str:
     """Render one frame of the TUI progress view.
 
-    Layout (DankInstall-style):
-      Noceasy Installer v0.1.0
-      [====>                      ] 3/17 04-yay-aur
-        building noctalia-git
+    Matches DankInstall's install view layout:
+
+      ⠹ Building noctalia-git
+      [████████████░░░░░░░░░░░░░░░░░░] 42%
+      $ yay -S --needed --noconfirm
+
+      Live Output:
+        ==> Making package: noctalia-git
     """
     lines = []
 
+    # Spinner + step text
+    display_step = step_text or module_name
+    lines.append(f"{spinner_char} {display_step}")
+    lines.append("")
+
     # Progress bar
     pct = idx / total if total else 0
-    bar_w = max(width - 20, 10)
-    filled = int(bar_w * pct)
-    bar = f"[{'=' * filled}>{' ' * (bar_w - filled)}] {idx}/{total} {module_name}"
+    filled = int(bar_width * pct)
+    empty = bar_width - filled
+    bar = f"[{'█' * filled}{'░' * empty}] {pct * 100:.0f}%"
     lines.append(bar)
+    lines.append("")
 
-    # Live build output (last 8 lines)
-    for line in list(build_lines)[-8:]:
-        lines.append(f"  {line}")
+    # Command info
+    if cmd_info:
+        lines.append(f"$ {cmd_info}")
+        lines.append("")
 
-    # Spinner
+    # Live output (last 8 lines)
     if build_lines:
-        lines.append(f"  {spinner_char}")
+        lines.append("Live Output:")
+        for line in list(build_lines)[-8:]:
+            if line:
+                lines.append(f"  {line}")
 
     return "\n".join(lines)
 
@@ -87,6 +103,8 @@ class _LiveTUI:
         self.total = total
         self.idx = 0
         self.module_name = ""
+        self.step_text = ""
+        self.cmd_info = ""
         self.build_lines: deque[str] = deque(maxlen=50)
         self._frame = 0
         self._running = False
@@ -110,11 +128,19 @@ class _LiveTUI:
         self._thread = threading.Thread(target=self._spin, daemon=True)
         self._thread.start()
 
-    def update_module(self, name: str, idx: int) -> None:
+    def update_module(self, name: str, idx: int, step: str = "") -> None:
         """Switch to a new module."""
         self.module_name = name
         self.idx = idx
+        self.step_text = step or f"Installing {name}"
         self.build_lines.clear()
+        self._render()
+
+    def update_step(self, step: str, cmd: str = "") -> None:
+        """Update the step description and command info."""
+        self.step_text = step
+        if cmd:
+            self.cmd_info = cmd
         self._render()
 
     def add_build_line(self, line: str) -> None:
@@ -166,6 +192,8 @@ class _LiveTUI:
         frame = _render_frame(
             self.idx, self.total, self.module_name,
             spinner, self.build_lines,
+            step_text=self.step_text,
+            cmd_info=self.cmd_info,
         )
 
         # Move up to overwrite previous frame
@@ -186,11 +214,16 @@ class _LiveTUI:
 
 # ── Module output capture ───────────────────────────────────────────
 
-class _OutputCapture(io.TextIOWrapper):
-    """A write-only file-like that captures lines and sends them to a TUI."""
+class _OutputCapture:
+    """A file-like that captures lines and feeds them to a TUI.
+
+    Recognises special markers:
+      @STEP:text   -> update the step description
+      @CMD:text    -> update the command info line
+      (anything else) -> add to the live output buffer
+    """
 
     def __init__(self, tui: _LiveTUI) -> None:
-        super().__init__(io.BytesIO())
         self._tui = tui
         self._buf = b""
 
@@ -199,12 +232,25 @@ class _OutputCapture(io.TextIOWrapper):
         self._buf += (s if isinstance(s, (str, bytes)) else str(s)).encode()
         while b"\n" in self._buf:
             line, self._buf = self._buf.split(b"\n", 1)
-            decoded = line.decode(errors="replace")
-            self._tui.add_build_line(decoded)
+            decoded = line.decode(errors="replace").rstrip()
+            if not decoded:
+                continue
+            if decoded.startswith("@STEP:"):
+                self._tui.update_step(decoded[6:])
+            elif decoded.startswith("@CMD:"):
+                self._tui.update_step(self._tui.step_text, cmd=decoded[5:])
+            else:
+                self._tui.add_build_line(decoded)
         return n
 
     def flush(self) -> None:
         pass
+
+    def isatty(self) -> bool:
+        return True  # So modules don't suppress output
+
+    def fileno(self):
+        return -1  # Not a real fd
 
 
 # ── Runner ──────────────────────────────────────────────────────────

@@ -48,7 +48,9 @@ def _install_streamed(cmd: list[str], user: str) -> bool:
             # Only show the package name that is being built.
             if line.startswith("==>") and "Making package:" in line:
                 pkg_name = line.split("Making package:")[1].split()[0]
-                print(f"  building {pkg_name}")
+                # Use markers that _OutputCapture picks up.
+                print(f"@STEP:Building {pkg_name}")
+                print(f"@CMD:yay -S --needed --noconfirm --removemake {pkg_name}")
     except (OSError, ValueError):
         pass
     return proc.wait() == 0
