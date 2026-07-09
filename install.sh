@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # install.sh - Bootstrap for Noceasy (Noctalia quick installer)
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/gabrln/Noceasy/main/install.sh | sudo bash
-#   sudo NOCEASY_VERSION=v1.5.0 bash install.sh
+#   curl -fsSL https://raw.githubusercontent.com/gabrln/Noceasy/main/install.sh | bash
+#   NOCEASY_VERSION=v1.5.0 bash install.sh
 #
 # Environment variables:
 #   NOCEASY_VERSION  Tag/branch to clone (default: main)
@@ -10,7 +10,7 @@
 #   NO_COLOR=1       Disables colors in Python too
 #
 # Behavior:
-#   1. Detects arch, OS, root/SUDO_USER
+#   1. Detects arch, OS, current user
 #   2. Ensures git and python (>= 3.11)
 #   3. Installs python-rich (framework dep)
 #   4. Clones (or updates) the repo in ~/Projects/Noceasy
@@ -73,22 +73,14 @@ case "${ID:-unknown}" in
     ;;
 esac
 
-# --- Root check ---------------------------------------------------------------
+# --- Current user detection ---------------------------------------------------
 
-if [[ $EUID -ne 0 ]]; then
-  error "Run with sudo. Ex: curl ... | sudo bash"
+REAL_USER="$USER"
+USER_HOME="$HOME"
+
+if [[ -z "$REAL_USER" || "$REAL_USER" == "root" ]]; then
+  error "Run as a normal user, not root."
 fi
-
-if [[ -z "${SUDO_USER:-}" ]]; then
-  error "Could not determine SUDO_USER. Run via sudo."
-fi
-
-if [[ "$SUDO_USER" == "root" ]]; then
-  error "Run as a normal user with sudo."
-fi
-
-REAL_USER="$SUDO_USER"
-USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
 if [[ -z "$USER_HOME" || ! -d "$USER_HOME" ]]; then
   error "Could not determine HOME for user '$REAL_USER'."
@@ -98,7 +90,7 @@ fi
 
 if ! command -v git &>/dev/null; then
   info "Installing git..."
-  pacman -Sy --needed --noconfirm git
+  sudo pacman -Sy --needed --noconfirm git
 fi
 
 if ! command -v python3 &>/dev/null; then
@@ -121,7 +113,7 @@ fi
 # Ensure rich (framework TUI dep)
 if ! python3 -c "import rich" &>/dev/null; then
   info "Installing python-rich..."
-  if ! pacman -S --needed --noconfirm python-rich; then
+  if ! sudo pacman -S --needed --noconfirm python-rich; then
     error "Failed to install python-rich. Install manually: pacman -S python-rich"
   fi
 fi

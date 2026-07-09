@@ -1,20 +1,20 @@
 """CLI parsing and main entrypoint.
 
 Usage:
-  sudo python3 -m installer                  # full install
-  sudo python3 -m installer --dry-run        # simulate
-  sudo python3 -m installer --verbose        # DEBUG logs
-  sudo python3 -m installer --quiet          # suppress INFO
-  sudo python3 -m installer --force          # re-run done modules
-  sudo python3 -m installer --no-color       # disable color
-  sudo python3 -m installer --help           # show this message
+  python3 -m installer                  # full install
+  python3 -m installer --dry-run        # simulate
+  python3 -m installer --verbose        # DEBUG logs
+  python3 -m installer --quiet          # suppress INFO
+  python3 -m installer --force          # re-run done modules
+  python3 -m installer --no-color       # disable color
+  python3 -m installer --help           # show this message
 
 Environment variables:
   NO_COLOR=1            Disable colored output (https://no-color.org/)
   NOCEASY_VERSION       Pin version (read by install.sh)
   NOCEASY_SHA256        Commit SHA to verify (read by install.sh)
 
-Requires root (run via `sudo bash install.sh`).
+Run via `bash install.sh` (escalates as needed).
 """
 
 from __future__ import annotations
@@ -28,11 +28,7 @@ from installer import __version__
 from installer.config import INSTALLER_DIR, REPO_DIR, LOGS_DIR
 from installer.errors import install_signal_handlers, fatal
 from installer.logger import LogLevel, setup_logging, log, set_suppress_stderr
-from installer.privilege import (
-    detect_real_user,
-    setup_polkit_policy,
-    cleanup_polkit_policy,
-)
+from installer.privilege import detect_real_user
 from installer.runner import ModuleRunner, RunnerOptions
 from installer.modules import build_default_pipeline
 
@@ -52,7 +48,7 @@ def _print_help_header() -> None:
     print("  -h, --help   Show this message")
     print("  --version    Show version")
     print("")
-    print("Requires root (run via `sudo bash install.sh`).")
+    print("Run via `bash install.sh` (escalates as needed).")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -102,16 +98,11 @@ def main(argv: list[str] | None = None) -> int:
 
     # Signal handlers + cleanup registration
     install_signal_handlers()
-    import atexit
-    atexit.register(cleanup_polkit_policy)
 
-    # Privilege: must be root; SUDO_USER must be set
+    # Detect the real (non-root) user
     real_user, user_home = detect_real_user()
     log("info", f"REAL_USER: {real_user}")
     log("info", f"USER_HOME: {user_home}")
-
-    # Install polkit policy
-    setup_polkit_policy(real_user)
 
     # Build pipeline of modules
     modules = build_default_pipeline()

@@ -26,8 +26,8 @@ def is_command(name: str) -> bool:
 
 def is_command_user(name: str, user: str) -> bool:
     """True if `name` is in `user`'s PATH."""
-    proc = run_as_user(["command", "-v", name], user=user, login=False,
-                        check=False, capture=True)
+    from installer.exec import run
+    proc = run(["command", "-v", name])
     return proc.returncode == 0
 
 
@@ -70,17 +70,20 @@ def systemd_unit_exists(unit: str) -> bool:
     return run(["systemctl", "list-unit-files", unit]).returncode == 0
 
 
-def chown_user(path: Path, user: str) -> None:
+def chown_user(path: Path, user: str, sudo_password: str | None = None) -> None:
     """chown -R `path` to `user:user`. Creates the path if missing."""
-    from installer.exec import run
+    from installer import privesc
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
-    run(["chown", "-R", f"{user}:{user}", str(path)])
+    privesc.run_privileged(
+        ["chown", "-R", f"{user}:{user}", str(path)],
+        sudo_password,
+    )
 
 
-def chown_user_path(path: Path, user: str) -> None:
+def chown_user_path(path: Path, user: str, sudo_password: str | None = None) -> None:
     """Alias for chown_user (used in some modules for clarity)."""
-    chown_user(path, user)
+    chown_user(path, user, sudo_password)
 
 
 def retry_with_backoff(callable_fn, *args,

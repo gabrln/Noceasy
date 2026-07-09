@@ -83,14 +83,21 @@ class CurlToolsModule(Module):
             # Write the wrapper script (avoids shell interpolation of URL)
             # mkdtemp/mkstemp create as root-owned; chown to the target
             # user so runuser('bash -lc ...') can read+execute it.
-            wrapper = Path(tempfile.mkstemp(prefix="noceasy-curl-", suffix=".sh")[1])
+            fd, wrapper_path = tempfile.mkstemp(prefix="noceasy-curl-", suffix=".sh")
+            wrapper = Path(wrapper_path)
+            os.close(fd)
             wrapper.chmod(0o700)
             chown_user(wrapper, ctx.real_user)
-            wrapper.write_text(
+            content = (
                 "#!/usr/bin/env bash\n"
                 "set -e -o pipefail\n"
                 f'curl -fsSL "{install_url}" | bash\n'
             )
+            wfd = os.open(wrapper_path, os.O_WRONLY)
+            try:
+                os.write(wfd, content.encode())
+            finally:
+                os.close(wfd)
 
             # Build env vars to pass to the subshell
             extra_env = {}

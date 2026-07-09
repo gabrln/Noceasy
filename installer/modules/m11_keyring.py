@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import re
 import shutil
+import tempfile
 from pathlib import Path
 
+from installer import privesc
 from installer.errors import fatal
 from installer.logger import log
 from installer.modules.base import Module, RunContext
@@ -47,6 +49,21 @@ def _insert_after_last(lines: list, pattern: str, new_line: str) -> bool:
         return False
     lines.insert(target, new_line)
     return True
+
+
+def _atomic_pam_write(content: str, ctx: RunContext) -> None:
+    """Write *content* to ``/etc/pam.d/greetd`` via temp file + install."""
+    with tempfile.NamedTemporaryFile(mode="w", delete=False,
+                                     suffix=".pam") as tmp:
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+    try:
+        privesc.run_privileged(
+            ["install", "-m", "644", str(tmp_path), str(PAM_FILE)],
+            ctx.sudo_password,
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 class KeyringModule(Module):
@@ -92,14 +109,14 @@ class KeyringModule(Module):
             modified = True
 
         if modified:
-            PAM_FILE.write_text("\n".join(lines) + "\n")
+            _atomic_pam_write("\n".join(lines) + "\n", ctx)
 
         # Validate the result
         final = PAM_FILE.read_text()
         if not _validate_pam(final):
             log("error",
                 f"{PAM_FILE} lost auth/session blocks. Restoring backup.")
-            shutil.copy2(bak, PAM_FILE)
+            _atomic_pam_write(bak.read_text(), ctx)
             fatal("PAM edit failed; backup restored.")
 
         log("success", "Keyring configured.")

@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 
+from installer import privesc
 from installer.errors import fatal
 from installer.exec import run
 from installer.logger import log
@@ -62,10 +63,16 @@ class PacmanOfficialModule(Module):
             return
 
         log("info", f"Installing missing official packages: {' '.join(missing)}")
-        if run(["pacman", "-S", "--needed", "--noconfirm", *missing]).returncode != 0:
+        if privesc.run_privileged(
+            ["pacman", "-S", "--needed", "--noconfirm", *missing],
+            ctx.sudo_password,
+        ).returncode != 0:
             log("warn", "pacman returned an error. Trying one by one...")
             for pkg in missing:
-                run(["pacman", "-S", "--needed", "--noconfirm", pkg])
+                privesc.run_privileged(
+                    ["pacman", "-S", "--needed", "--noconfirm", pkg],
+                    ctx.sudo_password,
+                )
 
         still_missing = _pacman_missing(missing)
         if still_missing:

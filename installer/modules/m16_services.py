@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 
+from installer import privesc
 from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
@@ -31,7 +32,9 @@ class ServicesModule(Module):
                 log("warn", f"  -> {svc} (unit not found, skipping)")
                 skipped += 1
                 continue
-            if run(["systemctl", "enable", svc]).returncode == 0:
+            if privesc.run_privileged(
+                ["systemctl", "enable", svc], ctx.sudo_password
+            ).returncode == 0:
                 log("info", f"  -> {svc} enabled")
                 enabled += 1
             else:

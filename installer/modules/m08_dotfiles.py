@@ -13,28 +13,19 @@ from installer.errors import fatal
 from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
-from installer.privilege import run_as_user
 from installer.toml_cache import get_cache
 
 
-def _chown(path: Path, user: str) -> None:
-    run(["chown", "-R", f"{user}:{user}", str(path)])
-
-
-def _atomic_copytree(src: Path, dst: Path, user: str) -> bool:
+def _atomic_copytree(src: Path, dst: Path) -> bool:
     """Copy src to a staging dir, then mv into dst. Returns True on success.
 
     On failure, `dst` is preserved (untouched). The staging dir is
     always cleaned up.
     """
     staging = Path(tempfile.mkdtemp(prefix="noceasy-dot-"))
-    # mkdtemp() creates as root-owned; chown to target user so that
-    # run_as_user('cp -a ...') can write into it.
-    run(["chown", f"{user}:{user}", str(staging)])
     try:
-        proc = run_as_user(
+        proc = run(
             ["cp", "-a", str(src), str(staging / dst.name)],
-            user=user, check=False,
         )
         if proc.returncode != 0:
             return False
@@ -68,9 +59,8 @@ def _atomic_copytree(src: Path, dst: Path, user: str) -> bool:
 
 def _copy_dir(src: Path, dst: Path, ctx: RunContext) -> None:
     """Copy a directory from REPO to USER_HOME, with atomicity."""
-    if not _atomic_copytree(src, dst, ctx.real_user):
+    if not _atomic_copytree(src, dst):
         fatal(f"Failed to copy {src.name} to {dst}")
-    _chown(dst, ctx.real_user)
     log("info", f"  -> {src.name}")
 
 
@@ -88,7 +78,7 @@ def _copy_zsh_with_plugins_backup(
             shutil.rmtree(plugins_backup, ignore_errors=True)
             plugins_backup = None
 
-    if not _atomic_copytree(zsh_src, zsh_dst, ctx.real_user):
+    if not _atomic_copytree(zsh_src, zsh_dst):
         log("warn", "Failed to copy zsh - original destination preserved.")
         if plugins_backup:
             shutil.rmtree(plugins_backup, ignore_errors=True)
@@ -101,8 +91,6 @@ def _copy_zsh_with_plugins_backup(
             (plugins_backup / "plugins").rename(plugins_dst)
         except OSError:
             shutil.copytree(plugins_backup / "plugins", plugins_dst)
-        _chown(plugins_dst, ctx.real_user)
-    _chown(zsh_dst, ctx.real_user)
     if plugins_backup:
         shutil.rmtree(plugins_backup, ignore_errors=True)
 
@@ -124,8 +112,7 @@ def _copy_avulso(src_rel: str, dst_template: str, ctx: RunContext) -> None:
         bak = dst_path.with_suffix(dst_path.suffix + f".noceasy.bak.{int(time.time())}")
         shutil.copy2(dst_path, bak)
 
-    run_as_user(["cp", "-f", str(src_path), str(dst_path)],
-                 user=ctx.real_user, check=False)
+    run(["cp", "-f", str(src_path), str(dst_path)])
     log("info", f"  -> {dst_template}")
 
 
@@ -136,7 +123,6 @@ def _create_xdg_dir(d: str, ctx: RunContext) -> None:
         expanded = str(ctx.user_home) + expanded[1:]
     path = Path(expanded)
     path.mkdir(parents=True, exist_ok=True)
-    _chown(path, ctx.real_user)
     log("info", f"  -> {path}")
 
 
@@ -147,7 +133,6 @@ class DotfilesModule(Module):
     def run(self, ctx: RunContext) -> None:
         log("info", "Ensuring ~/.config exists...")
         ctx.user_home.joinpath(".config").mkdir(parents=True, exist_ok=True)
-        _chown(ctx.user_home / ".config", ctx.real_user)
 
         configs = get_cache().get_list("dotfiles.toml", "directories.configs")
         log("info", "Copying user configurations...")
@@ -177,8 +162,7 @@ class DotfilesModule(Module):
 
         # XDG directories
         log("info", "Creating additional XDG directories...")
-        run_as_user("xdg-user-dirs-update 2>/dev/null || true",
-                     user=ctx.real_user, check=False)
+        run(["xdg-user-dirs-update"])
         xdg = get_cache().load("dotfiles.toml").get("xdg_dirs", {}).get("extra", [])
         for d in xdg:
             _create_xdg_dir(d, ctx)
@@ -186,7 +170,6 @@ class DotfilesModule(Module):
         # If Hyprland is running, its inotify watcher may have tried
         # to reload while files were being written and entered an error
         # state. Force a clean reload now that everything is in place.
-        run_as_user("hyprctl reload 2>/dev/null || true",
-                     user=ctx.real_user, check=False)
+        run(["hyprctl", "reload"])
 
         log("success", "Dotfiles applied.")

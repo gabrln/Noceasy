@@ -1,46 +1,29 @@
 """Privilege escalation helpers.
 
-We expect to be running as root (the install.sh bootstrap is `sudo
-bash`). For executing commands as the real (unprivileged) user, we
-use `runuser`, which is part of `util-linux` and is always present
+The installer runs as the real user; ``sudo`` is only used for
+individual privileged operations inside each module.
+
+For executing commands as the real (unprivileged) user, we use
+``runuser``, which is part of ``util-linux`` and is always present
 on Arch.
-
-Polkit policy:
-    - Installs /etc/polkit-1/rules.d/99-noceasy-installer.rules
-      authorizing REAL_USER to run `noceasy-helper` via pkexec
-      without re-auth.
-    - Copied from installer/polkit/* on disk.
-    - Removed on exit (see cleanup_polkit_policy).
-
-Replaces the bash version's:
-    - `sudo -u USER --preserve-env=PATH,HOME` -> `runuser -u USER --`
-    - `setup_temp_sudoers` (NOPASSWD sudoers) -> polkit + runuser
 """
 
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
-
-from installer.config import (
-    POLKIT_DIR,
-    POLKIT_HELPER_PATH,
-    POLKIT_POLICY_PATH,
-    POLKIT_RULES_PATH,
-)
 from installer.errors import fatal
-from installer.logger import log
-
-
-_polkit_installed = False
 
 
 # ---------------------------------------------------------------------------
 # runuser-based helpers
 # ---------------------------------------------------------------------------
+
+# TODO(phase 6): remove run_as_user() — callers will use subprocess directly
+# or delegate to privileged helpers instead.
+
 
 def run_as_user(
     cmd: str | Sequence[str],
@@ -88,105 +71,18 @@ def run_as_user(
 # ---------------------------------------------------------------------------
 
 def detect_real_user() -> tuple[str, str]:
-    """Verify we're root and return (real_user, user_home).
+    """Return (real_user, user_home) for the current user.
 
-    Exits via fatal() on error.
+    Uses ``pwd.getpwuid`` to resolve the user without relying on
+    environment variables like ``SUDO_USER``.
     """
-    if os.geteuid() != 0:
-        fatal("This command must be run with sudo.")
+    import pwd
 
-    sudo_user = os.environ.get("SUDO_USER", "")
-    if not sudo_user:
-        fatal("Could not determine SUDO_USER. Run via 'sudo bash install.sh'.")
+    pw = pwd.getpwuid(os.getuid())
+    real_user = pw.pw_name
+    user_home = pw.pw_dir
 
-    if sudo_user == "root":
-        fatal("Run as a normal user with sudo. Ex: curl ... | sudo bash")
+    if not user_home or not Path(user_home).is_dir():
+        fatal(f"User '{real_user}' HOME does not exist: {user_home}")
 
-    # Resolve home via getent
-    try:
-        out = subprocess.run(
-            ["getent", "passwd", sudo_user],
-            check=True, capture_output=True, text=True,
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
-        fatal(f"getent passwd failed: {exc}")
-
-    parts = out.stdout.strip().split(":")
-    if len(parts) < 7 or not parts[5]:
-        fatal(f"Could not determine HOME for user '{sudo_user}'.")
-
-    home = parts[5]
-    if not Path(home).is_dir():
-        fatal(f"User '{sudo_user}' HOME does not exist: {home}")
-
-    return sudo_user, home
-
-
-# ---------------------------------------------------------------------------
-# Polkit policy
-# ---------------------------------------------------------------------------
-
-def setup_polkit_policy(real_user: str) -> None:
-    """Install polkit rule + policy + helper binary. Idempotent.
-
-    All install steps are best-effort: a failure to install the
-    helper is a warning, not fatal, because the install can still
-    succeed via runuser (just without the pkexec helper for the
-    user's later use).
-    """
-    global _polkit_installed
-
-    if not shutil.which("pkexec"):
-        log("warn", "pkexec not found. Install 'polkit' (already in the manifest).")
-        return
-
-    if not POLKIT_DIR.is_dir():
-        log("warn", f"Polkit templates directory not found: {POLKIT_DIR}")
-        return
-
-    # 1. Rules file (auto-approve REAL_USER for our action)
-    try:
-        POLKIT_RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        template = (POLKIT_DIR / "99-noceasy-installer.rules").read_text()
-        rendered = template.replace("@REAL_USER@", real_user)
-        POLKIT_RULES_PATH.write_text(rendered)
-        POLKIT_RULES_PATH.chmod(0o644)
-    except OSError as exc:
-        log("warn", f"Could not write {POLKIT_RULES_PATH}: {exc}")
-        return
-
-    # 2. Policy file (only if missing)
-    if not POLKIT_POLICY_PATH.exists():
-        src = POLKIT_DIR / "org.archlinux.pkexec.noceasy.policy"
-        if src.is_file():
-            try:
-                POLKIT_POLICY_PATH.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, POLKIT_POLICY_PATH)
-                POLKIT_POLICY_PATH.chmod(0o644)
-            except OSError as exc:
-                log("warn", f"Could not copy policy: {exc}")
-
-    # 3. Helper binary (only if missing)
-    if not POLKIT_HELPER_PATH.exists():
-        src = POLKIT_DIR / "noceasy-helper"
-        if src.is_file():
-            try:
-                shutil.copy2(src, POLKIT_HELPER_PATH)
-                POLKIT_HELPER_PATH.chmod(0o755)
-            except OSError as exc:
-                log("warn", f"Could not install noceasy-helper: {exc}")
-
-    _polkit_installed = True
-    log("info", f"Polkit policy installed for {real_user}.")
-
-
-def cleanup_polkit_policy() -> None:
-    """Remove the rules file (helper + policy are kept)."""
-    if not _polkit_installed:
-        return
-    try:
-        if POLKIT_RULES_PATH.exists():
-            POLKIT_RULES_PATH.unlink()
-            log("debug", "Polkit policy removed.")
-    except OSError as exc:
-        log("debug", f"Error removing polkit policy: {exc}")
+    return real_user, user_home
