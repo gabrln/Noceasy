@@ -48,6 +48,3 @@ cleanup_temp_on_exit = true
 # Download and extract wallpaper pack during install
 wallpapers = true
 
-# Install polkit policy (auto-approved for REAL_USER)
-# Requires 'polkit' + agent (polkit-gnome) installed.
-enable_polkit_helper = true

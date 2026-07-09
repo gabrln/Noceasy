@@ -32,17 +32,11 @@ REPO_DIR: Path = _find_repo_root()
 INSTALLER_DIR: Path = REPO_DIR / "installer"
 MANIFESTS_DIR: Path = INSTALLER_DIR / "manifests"
 MODULES_DIR: Path = INSTALLER_DIR / "modules"
-POLKIT_DIR: Path = INSTALLER_DIR / "polkit"
 STATE_DIR: Path = INSTALLER_DIR / "state"
 BACKUPS_DIR: Path = STATE_DIR / "backups"
 LOGS_DIR: Path = INSTALLER_DIR / "logs"
 CONFIG_FILE: Path = INSTALLER_DIR / "config.toml"
 STATE_FILE: Path = STATE_DIR / "state.json"
-
-# Polkit policy install paths
-POLKIT_RULES_PATH: Path = Path("/etc/polkit-1/rules.d/99-noceasy-installer.rules")
-POLKIT_POLICY_PATH: Path = Path("/usr/share/polkit-1/actions/org.archlinux.pkexec.noceasy.policy")
-POLKIT_HELPER_PATH: Path = Path("/usr/local/bin/noceasy-helper")
 
 # Tunable limits (overridable via config.toml)
 DEFAULT_MIN_FREE_BYTES: int = 5 * 1024**3  # 5 GiB

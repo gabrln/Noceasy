@@ -16,4 +16,4 @@ where = ["."]
 include = ["installer*"]
 
 [tool.setuptools.package-data]
-"installer" = ["manifests/*.toml", "polkit/*"]
+"installer" = ["manifests/*.toml"]

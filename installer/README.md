@@ -12,7 +12,7 @@ install.sh                          bash bootstrap
    ├─ logger.py                    Rich logging
    ├─ errors.py                    traps, fatal, InstallerError
    ├─ exec.py                      run() subprocess helper
-   ├─ privilege.py                 runuser + polkit
+   ├─ privilege.py                 runuser, real-user detection
    ├─ toml_cache.py                manifests in memory
    ├─ state.py                     state.json atomic (flock)
    ├─ backup.py                    snapshot .1/.2 collision
@@ -45,7 +45,7 @@ GitHub compromise). Both are optional; the defaults are `main` and
 | `logger.py` | Rich logging with NO_COLOR/TTY/levels |
 | `errors.py` | fatal(), signal handlers, InstallerError hierarchy |
 | `exec.py` | run(), run_capture(), run_or_die() |
-| `privilege.py` | run_as_user, polkit install/cleanup |
+| `privilege.py` | run_as_user, detect_real_user |
 | `toml_cache.py` | in-memory manifest cache |
 | `state.py` | state.json (flock + os.replace atomic) |
 | `backup.py` | snapshot, restore, retention |
@@ -75,16 +75,6 @@ class MyModule(Module):
             raise ModuleFailure(self.name, f"some-command failed")
         log("success", "Done.")
 ```
-
-## Polkit helper
-
-`installer/polkit/noceasy-helper` is installed at `/usr/local/bin/`
-and is invokable via `pkexec noceasy-helper <subcommand>`. The
-polkit policy (`/etc/polkit-1/rules.d/99-noceasy-installer.rules`)
-auto-approves the real user (set in the install bootstrap).
-
-Subcommands: `refresh-icon-cache`, `enable-service`,
-`restart-user-service`, `set-shell`.
 
 ## Dev tools
 
@@ -130,7 +120,7 @@ Runner catches, state.mark_failed(module, reason)
   ↓
 errors.fatal(...)
   ↓
-run_cleanup() (polkit rules + log file close)
+run_cleanup() (log file close)
   ↓
 sys.exit(1)
 ```
@@ -143,7 +133,6 @@ sys.exit(1)
 | `Python 3.11+ required` | `pacman -S python` (Arch) or update your base. |
 | `python-rich not found` | `pacman -S python-rich`. The bootstrap installs it automatically when missing, but a sandboxed install can fail silently. |
 | `pacman: unable to find linux-cachyos` | You're on Arch, not CachyOS — the manifest filters these packages out automatically. Harmless. |
-| `polkit: ... authentication required` | Enable `polkit-gnome-authentication-agent-1` in your autostart (e.g. `~/.config/hypr/modules/autostart.lua`). |
 | `RuntimeError: hl.exec (no such field)` or `hl.exec: not a function` | The hyprland config (or a script under `~/.config/hypr/scripts/`) is calling a function that does not exist in your installed Hyprland version. The version on `main` targets Hyprland 0.55+; older versions need the legacy `bind = ...` syntax. |
 | Stale `installer/state/state.json` blocks a re-run | Delete the file: `sudo rm installer/state/state.json` (or run `python3 -m installer --force`). |
 | Logs in `installer/logs/` | Look for the most recent `installer-YYYYMMDD-HHMMSS.log`. Each curl-tool install also writes its own log named `curl-tools-<name>-<pid>.log`. |
