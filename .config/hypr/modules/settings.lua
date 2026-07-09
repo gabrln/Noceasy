@@ -74,5 +74,4 @@ hl.config({
     },
 })
 
--- scrolloverview plugin keywords are applied from scripts/bootstrap.lua,
--- after hyprpm has had a chance to enable the plugin on first boot.
+
