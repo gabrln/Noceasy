@@ -5,10 +5,39 @@ from __future__ import annotations
 import atexit
 import signal
 import sys
-import traceback
 from typing import Callable
 
 from installer.logger import log
+
+
+class InstallerError(Exception):
+    """Base exception for installer-specific failures.
+
+    The Runner catches this and calls fatal(). Subclasses provide
+    more specific context (network, permission, module failure).
+    """
+    pass
+
+
+class ModuleFailure(InstallerError):
+    """Raised by a Module.run() to signal failure with context."""
+    def __init__(self, module_name: str, reason: str):
+        super().__init__(f"Module {module_name} failed: {reason}")
+        self.module_name = module_name
+        self.reason = reason
+
+
+class NetworkError(InstallerError):
+    """Raised when a network operation fails after retries."""
+    pass
+
+
+class PermissionError_(InstallerError):
+    """Raised when a privilege-related operation fails.
+
+    Named with underscore to avoid shadowing builtin PermissionError.
+    """
+    pass
 
 
 _cleanup_hooks: list[Callable[[], None]] = []

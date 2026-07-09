@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from installer.errors import fatal
+from installer.errors import fatal, ModuleFailure
 from installer.logger import log
 from installer.modules.base import Module, RunContext
 from installer.progress import make_progress
@@ -61,6 +61,9 @@ class ModuleRunner:
                     module.run(ctx)
                     module.post_check(ctx)
                     self.state.mark_done(module.name, manifest_path)
+            except ModuleFailure as exc:
+                self.state.mark_failed(exc.module_name, exc.reason)
+                fatal(str(exc))
             except Exception as exc:
                 self.state.mark_failed(module.name, str(exc))
                 fatal(f"Module {module.name} failed: {exc}")

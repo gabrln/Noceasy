@@ -50,7 +50,13 @@ class Module:
         return True
 
     def run(self, ctx: RunContext) -> None:
-        """Run the module. Raise on failure (the Runner will catch it)."""
+        """Run the module. Raise ModuleFailure on failure.
+
+        The Runner catches ModuleFailure (and other Exception) and
+        calls fatal(). For most internal errors, raise Exception
+        with a clear message; the Runner logs the module name
+        automatically.
+        """
         raise NotImplementedError
 
     def post_check(self, ctx: RunContext) -> None:
