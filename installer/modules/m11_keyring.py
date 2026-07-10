@@ -65,6 +65,20 @@ def _atomic_pam_write(content: str, ctx: RunContext) -> None:
     finally:
         tmp_path.unlink(missing_ok=True)
 
+def _atomic_copy(src: Path, dest: Path, ctx: RunContext) -> None:
+    """Copy *src* to *dest* via temp file + ``install`` (root-owned)."""
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        shutil.copy2(src, tmp_path)
+        privesc.run_privileged(
+            ["install", "-m", "644", str(tmp_path), str(dest)],
+            ctx.sudo_password,
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 
 class KeyringModule(Module):
     name = "11-keyring"
@@ -81,8 +95,7 @@ class KeyringModule(Module):
         # Backup once (so we can restore if our edit breaks PAM)
         bak = PAM_FILE.with_suffix(PAM_FILE.suffix + ".noceasy.bak")
         if not bak.exists():
-            shutil.copy2(PAM_FILE, bak)
-            bak.chmod(0o600)
+            _atomic_copy(PAM_FILE, bak, ctx)
 
         content = PAM_FILE.read_text()
         lines = content.splitlines(keepends=False)
