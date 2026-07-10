@@ -3,7 +3,8 @@
 -- =========================================================================
 
 local mod = "SUPER"
-local scripts_dir = os.getenv("HOME") .. "/.config/hypr/scripts"
+local config_home = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+local scripts_dir = config_home .. "/hypr/scripts"
 
 
 -- ── Helpers ───────────────────────────────────────────────────────────
