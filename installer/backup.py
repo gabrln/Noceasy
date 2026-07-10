@@ -13,14 +13,16 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from installer.config import BACKUPS_DIR, get_config
+from installer.config import BACKUPS_DIR, DEFAULT_MAX_BACKUP_BYTES, get_config
 from installer.exec import run
 from installer.logger import log
+from installer import privesc
 
 
 def init_backups() -> Path:
@@ -72,7 +74,7 @@ class _CreatedBackup:
     copied: list[Path]
 
 
-def create(label: str, paths: list[Path]) -> _CreatedBackup:
+def create(label: str, paths: list[Path], sudo_password: str | None = None) -> _CreatedBackup:
     """Create a snapshot. Logs progress; returns the snapshot name."""
     if not BACKUPS_DIR.exists():
         init_backups()
@@ -95,10 +97,11 @@ def create(label: str, paths: list[Path]) -> _CreatedBackup:
             # -a --no-preserve=ownership: copy attrs but force root
             argv = ["cp", "-a", "--no-preserve=ownership",
                     str(path), str(target)]
+            proc = privesc.run_privileged(argv, sudo_password)
         else:
             # Preserve ownership (e.g. dotfiles in ~)
             argv = ["cp", "-a", str(path), str(target)]
-        proc = run(argv)
+            proc = run(argv)
         if proc.returncode == 0:
             log("info", f"  -> {path}")
             copied.append(target)
@@ -126,10 +129,33 @@ def _apply_retention(label: str, max_keep: int) -> None:
         key=lambda p: p.name,
         reverse=True,
     )
-    for old in snaps[max_keep:]:
-        log("info", f"  -> removing old backup: {old.name}")
-        shutil.rmtree(old, ignore_errors=True)
 
+    # First: apply count limit
+    for old in snaps[max_keep:]:
+        log("info", f"  -> removing old backup (count limit): {old.name}")
+        shutil.rmtree(old, ignore_errors=True)
+        snaps.remove(old)
+
+    # Second: apply size limit
+    max_bytes = get_config("flags.max_backup_bytes", DEFAULT_MAX_BACKUP_BYTES)
+    try:
+        max_bytes = int(max_bytes)
+    except (TypeError, ValueError):
+        max_bytes = DEFAULT_MAX_BACKUP_BYTES
+
+    if max_bytes > 0:
+        total = sum(_dir_size(s) for s in snaps)
+        while total > max_bytes and len(snaps) > 1:
+            oldest = snaps.pop()
+            size = _dir_size(oldest)
+            log("info", f"  -> removing old backup (size limit): {oldest.name} ({size / 1024 / 1024:.1f} MiB)")
+            shutil.rmtree(oldest, ignore_errors=True)
+            total -= size
+
+
+def _dir_size(path: Path) -> int:
+    """Total size of a directory in bytes."""
+    return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
 
 def list_snapshots(label: str | None = None) -> list[str]:
     """List snapshot names, most recent first. Optionally filtered."""

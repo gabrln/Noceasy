@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from installer import privesc
+from installer import backup
 from installer.config import REPO_DIR
 from installer.exec import run
 from installer.logger import log
@@ -30,15 +31,6 @@ def _create_greeter_user(ctx: RunContext) -> None:
         ["chown", "greeter:greeter", str(home)], ctx.sudo_password,
     )
     privesc.run_privileged(["chmod", "755", str(home)], ctx.sudo_password)
-
-
-def _backup_etc_file(path: Path) -> None:
-    """Backup an /etc file before overwriting (once)."""
-    bak = path.with_suffix(path.suffix + ".noceasy.bak")
-    if path.exists() and not bak.exists():
-        shutil.copy2(path, bak)
-        bak.chmod(0o600)
-
 
 def _ensure_log_file(path: Path, ctx: RunContext) -> None:
     """Touch a log file and chown it to the greeter user."""
@@ -72,8 +64,8 @@ class GreeterModule(Module):
         _create_greeter_user(ctx)
 
         # Backup /etc configs before overwriting
-        for f in ("/etc/greetd/config.toml", "/etc/pam.d/greetd"):
-            _backup_etc_file(Path(f))
+        etc_paths = [Path("/etc/greetd/config.toml"), Path("/etc/pam.d/greetd")]
+        backup.create("greeter", etc_paths, sudo_password=ctx.sudo_password)
 
         privesc.run_privileged(["mkdir", "-p", "/etc/greetd"], ctx.sudo_password)
         _atomic_system_copy(

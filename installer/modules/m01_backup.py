@@ -17,7 +17,7 @@ class BackupModule(Module):
             log("info", "Auto backup disabled. Skipping.")
             return
         log("info", "Creating snapshot of current configurations...")
-        name = backup_user_files()
+        name = backup_user_files(ctx.user_home, ctx.sudo_password)
         if name:
             log("success", f"Snapshot created: {name}")
         else:

@@ -99,7 +99,7 @@ def retry_with_backoff(callable_fn, *args,
     return False
 
 
-def _collect_backup_paths() -> list[Path]:
+def _collect_backup_paths(user_home: Path) -> list[Path]:
     """Collect all user config paths that should be backed up.
 
     Reads the dotfiles manifest to discover config directories and
@@ -107,17 +107,17 @@ def _collect_backup_paths() -> list[Path]:
     installer overwrites.
     """
     cache = get_cache()
-    home = Path(os.environ["USER_HOME"])
+    
     paths: list[Path] = []
 
     # Config directories from dotfiles.toml
     for cfg in cache.get_list("dotfiles.toml", "directories.configs"):
-        paths.append(home / ".config" / cfg)
-    paths.append(home / ".config" / "zsh")
+        paths.append(user_home / ".config" / cfg)
+    paths.append(user_home / ".config" / "zsh")
 
     # Individual files from dotfiles.toml
     dotfiles = cache.load("dotfiles.toml")
-    home_str = str(home)
+    home_str = str(user_home)
     for _src, dst in dotfiles.get("files", {}).items():
         expanded = os.path.expandvars(dst)
         if expanded.startswith("~"):
@@ -131,11 +131,11 @@ def _collect_backup_paths() -> list[Path]:
     return paths
 
 
-def backup_user_files() -> str | None:
+def backup_user_files(user_home: Path, sudo_password: str | None = None) -> str | None:
     """Snapshot the user's existing config files before they're overwritten.
 
     Returns the snapshot name (or None if no paths to back up).
     """
-    paths = _collect_backup_paths()
-    result = backup_create("pre-install", paths)
+    paths = _collect_backup_paths(user_home)
+    result = backup_create("pre-install", paths, sudo_password=sudo_password)
     return result.name
