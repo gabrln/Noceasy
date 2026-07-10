@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from installer.errors import fatal, ModuleFailure, register_cleanup
-from installer.logger import log, set_suppress_stderr
+from installer.logger import log, set_suppress_stderr, redirect_log_output, reset_log_output
 from installer.modules.base import Module, RunContext
 from installer.progress import LiveDisplay, OutputCapture, is_tty
 from installer.privilege import detect_real_user
@@ -116,6 +116,7 @@ class ModuleRunner:
         old_stderr = sys.stderr
         sys.stdout = capture
         sys.stderr = capture
+        redirect_log_output(capture)
         try:
             module.pre_check(ctx)
             module.run(ctx)
@@ -131,6 +132,7 @@ class ModuleRunner:
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
+            reset_log_output()
             set_suppress_stderr(False)
             tui.finish()
 

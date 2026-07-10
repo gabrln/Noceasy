@@ -61,6 +61,7 @@ class _LogState:
 
 _state: _LogState | None = None
 _suppress_stderr = False  # True while a module runs (logs go to file only)
+_redirect_file = None     # When set, TTY output goes here instead of Console
 
 
 def _use_color() -> bool:
@@ -134,6 +135,18 @@ def _should_print(level_name: str) -> bool:
     return True
 
 
+def redirect_log_output(file) -> None:
+    """Redirect TTY log output to *file* (an OutputCapture)."""
+    global _redirect_file
+    _redirect_file = file
+
+
+def reset_log_output() -> None:
+    """Stop redirecting — TTY output goes back to the Rich Console."""
+    global _redirect_file
+    _redirect_file = None
+
+
 def log(level: str, message: str) -> None:
     """Print a log line to stderr (TTY) and to the log file (always)."""
     if _state is None:
@@ -150,7 +163,12 @@ def log(level: str, message: str) -> None:
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         _state.file_console.print(f"[{ts}] [{name}] {message}", highlight=False)
 
-    # TTY: filtered by level
+    # Redirect: plain text to the capture (for Live Output panel)
+    if _redirect_file is not None and _should_print(level):
+        _redirect_file.write(f"[{name}] {message}\n")
+        return
+
+    # TTY: filtered by level (Rich Console)
     if _should_print(level):
         _state.console.print(f"[{style}][{name}][/{style}] {message}",
                               highlight=False)
