@@ -11,6 +11,9 @@ dependencies = [
     "rich>=13.7",
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["installer*"]

@@ -9,6 +9,7 @@ unless the user provides a config override.
 from __future__ import annotations
 
 import os
+import functools
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -49,8 +50,13 @@ NETWORK_RETRY_ATTEMPTS: int = 3
 NETWORK_RETRY_BASE_SECONDS: int = 2  # backoff: 1s, 2s, 4s, ...
 
 
+@functools.lru_cache(maxsize=1)
 def load_config() -> dict[str, Any]:
-    """Read installer/config.toml. Empty dict if missing or invalid."""
+    """Read installer/config.toml. Cached after first call.
+
+    Returns an empty dict if the file is missing or invalid.
+    To force a re-read, call ``load_config.cache_clear()``.
+    """
     if not CONFIG_FILE.is_file():
         return {}
     try:

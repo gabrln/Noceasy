@@ -1,7 +1,8 @@
 """State persistence (replaces installer/lib/state.sh).
 
-state.json tracks which modules have been run. Writes are atomic
-(tempfile + os.replace) and serialized with fcntl.flock.
+Two layers:
+  - ``JsonStore``: atomic JSON file with flock-based serialization.
+  - ``State``: module status tracking (which modules have run).
 """
 
 from __future__ import annotations
@@ -12,7 +13,6 @@ import json
 import os
 import tempfile
 import time
-from dataclasses import dataclass
 from pathlib import Path
 
 from installer.config import STATE_DIR, STATE_FILE, LOCK_TIMEOUT_SECONDS
@@ -38,69 +38,38 @@ def hash_file(path: Path) -> str:
     return ""
 
 
-def atomic_write_json(path: Path, data: dict) -> None:
-    """Write `data` as JSON to `path` atomically.
+def _iso_now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
 
-    Creates a temp file in the same directory, fsyncs, then renames
-    via os.replace (atomic on POSIX). Permissions set to 0600.
+
+# ---------------------------------------------------------------------------
+# JsonStore — atomic JSON with flock serialization
+# ---------------------------------------------------------------------------
+
+
+class JsonStore:
+    """Atomic JSON file with flock-based serialization.
+
+    Handles locking, atomic writes (tempfile + fsync + rename),
+    and corruption recovery.  Does not know about modules or
+    manifests — that logic lives in ``State``.
     """
-    dirpath = path.parent or Path(".")
-    fd, tmp = tempfile.mkstemp(dir=str(dirpath), prefix=".state.", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w") as f:
-            json.dump(data, f, indent=2, sort_keys=True)
-            f.flush()
-            os.fsync(f.fileno())
-        os.chmod(tmp, 0o600)
-        os.replace(tmp, path)
-    except Exception:
-        if os.path.exists(tmp):
-            os.unlink(tmp)
-        raise
 
-
-def read_json_or_default(path: Path, default: dict) -> dict:
-    """Read JSON from `path` or return `default` on any error.
-
-    If the file exists but is corrupted, it's moved aside with a
-    timestamp suffix and a fresh empty file is created.
-    """
-    try:
-        return json.loads(path.read_text() or "{}")
-    except (OSError, json.JSONDecodeError) as exc:
-        log("warn", f"state.json corrupted: {exc}. Backing up and recreating.")
-        backup = path.parent / f"state.json.corrupt-{int(time.time())}"
-        try:
-            path.rename(backup)
-        except OSError:
-            pass
-        atomic_write_json(path, default)
-        return default
-
-
-class State:
-    """state.json wrapper with atomic writes and flock serialization."""
-
-    def __init__(self, path: Path = STATE_FILE, dir_: Path = STATE_DIR):
+    def __init__(self, path: Path, lock_path: Path | None = None):
         self.path = path
-        self.dir = dir_
-        self.dir.mkdir(parents=True, exist_ok=True)
-        self.dir.chmod(0o700)
-        if not self.path.exists():
-            atomic_write_json(self.path, {})
-            self.path.chmod(0o600)
-        self._lock_path = self.dir / ".state.lock"
+        self._lock_path = lock_path or path.parent / f".{path.name}.lock"
         self._lock_fd: int | None = None
+        self.path.parent.mkdir(parents=True, exist_ok=True)
 
-    def __enter__(self) -> "State":
+    # -- Context manager (lock) ------------------------------------------
+
+    def __enter__(self) -> "JsonStore":
         self._lock_fd = os.open(str(self._lock_path),
-                                 os.O_CREAT | os.O_RDWR, 0o600)
+                                os.O_CREAT | os.O_RDWR, 0o600)
         try:
             fcntl.flock(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            # Fall back to blocking lock with timeout
-            import errno
-            import select
             deadline = time.monotonic() + LOCK_TIMEOUT_SECONDS
             while time.monotonic() < deadline:
                 try:
@@ -109,8 +78,9 @@ class State:
                 except BlockingIOError:
                     time.sleep(0.1)
             else:
-                log("warn", f"Could not acquire state.json lock "
-                            f"after {LOCK_TIMEOUT_SECONDS}s.")
+                log("warn",
+                    f"Could not acquire lock for {self.path.name} "
+                    f"after {LOCK_TIMEOUT_SECONDS}s.")
         return self
 
     def __exit__(self, *args) -> None:
@@ -119,18 +89,81 @@ class State:
             os.close(self._lock_fd)
             self._lock_fd = None
 
-    def get(self, module: str, field: str) -> str:
-        data = read_json_or_default(self.path, {})
-        return str(data.get(module, {}).get(field, ""))
+    # -- Read / Write ----------------------------------------------------
 
-    def set(self, module: str, field: str, value: str) -> None:
+    def read(self) -> dict:
+        """Read JSON, returning ``{}`` on any error.
+
+        If the file is corrupted it is moved aside and an empty
+        file is created.
+        """
+        try:
+            return json.loads(self.path.read_text() or "{}")
+        except (OSError, json.JSONDecodeError) as exc:
+            log("warn", f"{self.path.name} corrupted: {exc}. Backing up.")
+            backup = self.path.parent / \
+                f"{self.path.name}.corrupt-{int(time.time())}"
+            try:
+                self.path.rename(backup)
+            except OSError:
+                pass
+            self.write({})
+            return {}
+
+    def write(self, data: dict) -> None:
+        """Write JSON atomically (tempfile + fsync + rename)."""
+        dirpath = self.path.parent or Path(".")
+        fd, tmp = tempfile.mkstemp(dir=str(dirpath), prefix=".", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f, indent=2, sort_keys=True)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(tmp, 0o600)
+            os.replace(tmp, self.path)
+        except Exception:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+            raise
+
+    # -- Generic key-value -----------------------------------------------
+
+    def get(self, key: str, field: str) -> str:
+        data = self.read()
+        return str(data.get(key, {}).get(field, ""))
+
+    def set(self, key: str, field: str, value: str) -> None:
         with self:
-            data = read_json_or_default(self.path, {})
-            data.setdefault(module, {})[field] = value
-            atomic_write_json(self.path, data)
+            data = self.read()
+            data.setdefault(key, {})[field] = value
+            self.write(data)
+
+
+# ---------------------------------------------------------------------------
+# State — module status tracking
+# ---------------------------------------------------------------------------
+
+
+class State:
+    """Tracks which modules have been run via state.json.
+
+    Uses ``JsonStore`` for persistence and locking.  Contains only
+    module-specific logic (status, manifest hashing).
+    """
+
+    def __init__(self, path: Path = STATE_FILE, dir_: Path = STATE_DIR):
+        self._dir = dir_
+        self._dir.mkdir(parents=True, exist_ok=True)
+        self._dir.chmod(0o700)
+        self._store = JsonStore(path, lock_path=self._dir / ".state.lock")
+        if not self._store.path.exists():
+            self._store.write({})
+            self._store.path.chmod(0o600)
+
+    # -- Module status ---------------------------------------------------
 
     def is_up_to_date(self, module: str, manifest: Path | None) -> bool:
-        data = read_json_or_default(self.path, {})
+        data = self._store.read()
         if data.get(module, {}).get("status") != "done":
             return False
         if manifest is None or not manifest.exists():
@@ -140,26 +173,29 @@ class State:
         return current == stored
 
     def mark_done(self, module: str, manifest: Path | None) -> None:
-        with self:
-            data = read_json_or_default(self.path, {})
+        with self._store:
+            data = self._store.read()
             entry = data.setdefault(module, {})
             entry["status"] = "done"
             entry["completed_at"] = _iso_now()
             entry["manifest_hash"] = (
                 hash_file(manifest) if manifest and manifest.exists() else ""
             )
-            atomic_write_json(self.path, data)
+            self._store.write(data)
 
     def mark_failed(self, module: str, reason: str) -> None:
-        with self:
-            data = read_json_or_default(self.path, {})
+        with self._store:
+            data = self._store.read()
             entry = data.setdefault(module, {})
             entry["status"] = "failed"
             entry["failure_reason"] = reason
             entry["failed_at"] = _iso_now()
-            atomic_write_json(self.path, data)
+            self._store.write(data)
 
+    # -- Generic key-value (delegates to store) --------------------------
 
-def _iso_now() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat()
+    def get(self, module: str, field: str) -> str:
+        return self._store.get(module, field)
+
+    def set(self, module: str, field: str, value: str) -> None:
+        self._store.set(module, field, value)

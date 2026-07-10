@@ -9,13 +9,15 @@ import time
 from pathlib import Path
 from typing import Sequence
 
+from installer.backup import create as backup_create
 from installer.config import (
     DEFAULT_MIN_FREE_BYTES,
     NETWORK_RETRY_ATTEMPTS,
     NETWORK_RETRY_BASE_SECONDS,
 )
+from installer.exec import run
 from installer.logger import log
-
+from installer import privesc
 from installer.toml_cache import get_cache
 
 
@@ -26,14 +28,12 @@ def is_command(name: str) -> bool:
 
 def is_command_user(name: str, user: str) -> bool:
     """True if `name` is in `user`'s PATH."""
-    from installer.exec import run
     proc = run(["command", "-v", name])
     return proc.returncode == 0
 
 
 def has_internet() -> bool:
     """True if github.com is reachable."""
-    from installer.exec import run
     return run(["curl", "-fsSI", "--max-time", "5", "https://github.com"],
                 timeout=10).returncode == 0
 
@@ -60,19 +60,16 @@ def has_free_space(paths: Sequence[Path],
 
 def pkg_installed(pkg: str) -> bool:
     """True if `pkg` is installed via pacman."""
-    from installer.exec import run
     return run(["pacman", "-Q", pkg]).returncode == 0
 
 
 def systemd_unit_exists(unit: str) -> bool:
     """True if the systemd unit file is known."""
-    from installer.exec import run
     return run(["systemctl", "list-unit-files", unit]).returncode == 0
 
 
 def chown_user(path: Path, user: str, sudo_password: str | None = None) -> None:
     """chown -R `path` to `user:user`. Creates the path if missing."""
-    from installer import privesc
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
     privesc.run_privileged(
@@ -102,24 +99,23 @@ def retry_with_backoff(callable_fn, *args,
     return False
 
 
-def backup_user_files() -> str | None:
-    """Snapshot the user's existing config files before they're overwritten.
+def _collect_backup_paths() -> list[Path]:
+    """Collect all user config paths that should be backed up.
 
-    Returns the snapshot name (or None if no paths to back up).
-    Imported lazily to avoid circular imports.
+    Reads the dotfiles manifest to discover config directories and
+    individual files, then appends system-wide paths that the
+    installer overwrites.
     """
-    from installer.backup import create
-    from installer.config import MANIFESTS_DIR
-
     cache = get_cache()
     home = Path(os.environ["USER_HOME"])
     paths: list[Path] = []
 
+    # Config directories from dotfiles.toml
     for cfg in cache.get_list("dotfiles.toml", "directories.configs"):
         paths.append(home / ".config" / cfg)
     paths.append(home / ".config" / "zsh")
 
-    # Read full dotfiles.toml for `files` map
+    # Individual files from dotfiles.toml
     dotfiles = cache.load("dotfiles.toml")
     home_str = str(home)
     for _src, dst in dotfiles.get("files", {}).items():
@@ -128,8 +124,18 @@ def backup_user_files() -> str | None:
             expanded = home_str + expanded[1:]
         paths.append(Path(expanded))
 
+    # System paths
     paths.append(Path("/etc/greetd"))
     paths.append(Path("/etc/pam.d/greetd"))
 
-    result = create("pre-install", paths)
+    return paths
+
+
+def backup_user_files() -> str | None:
+    """Snapshot the user's existing config files before they're overwritten.
+
+    Returns the snapshot name (or None if no paths to back up).
+    """
+    paths = _collect_backup_paths()
+    result = backup_create("pre-install", paths)
     return result.name

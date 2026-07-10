@@ -147,15 +147,23 @@ def validate_password(pw: str, tool: Tool) -> bool:
             argv,
             input=pw + "\n",
             text=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
         )
     except FileNotFoundError:
         log("error", f"privesc: {_tool_binary(tool)} binary not found")
         return False
+    except subprocess.TimeoutExpired:
+        log("warn",
+            f"privesc: password validation timed out for {tool.value}")
+        return False
 
     if proc.returncode != 0:
-        log("warn", f"privesc: password validation failed for {tool.value}")
+        stderr_msg = (proc.stderr or "").strip()
+        log("warn",
+            f"privesc: password validation failed for {tool.value} "
+            f"(rc={proc.returncode}, stderr={stderr_msg!r})")
         return False
 
     log("debug", f"privesc: password validated for {tool.value}")

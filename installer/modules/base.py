@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,7 +32,7 @@ class RunContext:
         return self.real_user
 
 
-class Module:
+class Module(ABC):
     """Base class for install steps.
 
     Subclasses override `run()`. Optionally set `name` and
@@ -50,6 +51,7 @@ class Module:
         """Return False to skip this module (e.g. precondition not met)."""
         return True
 
+    @abstractmethod
     def run(self, ctx: RunContext) -> None:
         """Run the module. Raise ModuleFailure on failure.
 
@@ -77,7 +79,7 @@ class Module:
         with quantifiable work (package builds, file downloads)
         should emit ``@PROGRESS`` / ``@ADVANCE``.
         """
-        raise NotImplementedError
+        ...
 
     def post_check(self, ctx: RunContext) -> None:
         """Validate after run; raise on failure."""
