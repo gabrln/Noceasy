@@ -5,7 +5,7 @@ return {
   { "SUPER + E", "[Apps] Launch kitty -e yazi", "exec_cmd(\"kitty -e yazi\")" },
   { "SUPER + SHIFT + E", "[Apps] Launch thunar", "exec_cmd(\"thunar\")" },
   { "SUPER + Q", "[Windows] Close", "window.close()" },
-  { "SUPER + Space", "[Windows] Window float", "window.float({ action = \"toggle\" })) hl.dispatch(hl.dsp.window.center()" },
+  { "SUPER + Space", "[Windows] Window float", "window.float({ action = \"toggle\" })) hl.dispatch(hl.dsp.window.resize({ x = 1280, y = 720 })) hl.dispatch(hl.dsp.window.center()" },
   { "SUPER + ALT + Space", "Toggle pinned", "window.pin({ action = \"toggle\" })" },
   { "SUPER + C", "[Windows] Center", "window.center()" },
   { "CTRL + ALT + Left", "[Windows] Window resize", "window.resize({ x = -100, y = 0, relative = true })" },

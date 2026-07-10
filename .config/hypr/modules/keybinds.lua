@@ -31,6 +31,7 @@ hl.bind(mod .. " + SHIFT + E", hl.dsp.exec_cmd("thunar"))
 hl.bind(mod .. " + Q",            hl.dsp.window.close())
 hl.bind(mod .. " + Space", function()
     hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+    hl.dispatch(hl.dsp.window.resize({ x = 1280, y = 720 }))
     hl.dispatch(hl.dsp.window.center())
 end)
 -- @desc Toggle floating/centralizar
