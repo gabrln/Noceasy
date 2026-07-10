@@ -90,11 +90,12 @@ real user and survive `git pull` (next `install.sh` re-syncs).
 
 Currently shipped:
 
-- `gen_keyhints` — regenerates `~/.config/hypr/scripts/KeyHints.lua`
-  from `keybinds.lua`. Usage:
+- `gen_keyhints` — regenera `KeyHints_data.lua` a partir de `keybinds.lua`.
+  Categorias vêm dos cabeçalhos de seção `═══`; descrições das anotações
+  `-- @desc` (ou auto-geradas). Uso:
   ```bash
-  gen_keyhints                   # uses ~/Projects/Noceasy
-  gen_keyhints --repo ~/dotfiles # custom repo path
+  gen_keyhints                   # usa ~/Projects/Noceasy
+  gen_keyhints --repo ~/dotfiles # caminho customizado do repo
   NOCEASY_REPO=~/dotfiles gen_keyhints --check  # CI / pre-commit
   ```
 

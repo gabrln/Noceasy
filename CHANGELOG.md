@@ -3,6 +3,22 @@
 All notable changes to Noceasy are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v0.4.0] - 2026-07-10
+
+### Changed
+- **Sistema KeyHints refatorado**: categorias agora são definidas por
+  cabeçalhos de seção em `keybinds.lua` em vez de heurísticas Python.
+  Adicionadas anotações `@group` e `@desc` para agrupamento de
+  categorias e descrições customizadas. Saída gerada dividida em
+  `KeyHints_data.lua` (dados) e `KeyHints_runner.lua` (runner fzf
+  estático). Removidas ~200 linhas de parsing heurístico de
+  `gen_keyhints.py`.
+- Cabeçalhos de seção em `keybinds.lua` traduzidos do português para
+  inglês.
+
+### Added
+- Testes unitários para `gen_keyhints.py` (38 testes, `unittest`).
+
 ## [v0.3.0] - 2026-07-09
 
 ### Fixed
