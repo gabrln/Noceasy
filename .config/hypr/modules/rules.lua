@@ -9,9 +9,9 @@ hl.window_rule({ match = { class = "keyhints-scratch" }, float = true, size = "9
 
 -- Noctalia settings panel (floating, centred)
 hl.window_rule({
-    match = { class = "dev.noctalia.Noctalia.Settings" },
+    match = { class = "dev.noctalia.Noctalia" },
     float = true,
-    size = "1000 900",
+    size = { 1080, 920 },
     center = true,
 })
 

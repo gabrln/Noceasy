@@ -29,9 +29,11 @@ hl.bind(mod .. " + SHIFT + E", hl.dsp.exec_cmd("thunar"))
 -- ═══ Windows ═════════════════════════════════════════════════════════════
 
 hl.bind(mod .. " + Q",            hl.dsp.window.close())
-hl.bind(mod .. " + F",            hl.dsp.window.fullscreen())
-hl.bind(mod .. " + Space",        hl.dsp.window.float({ action = "toggle" }))
--- @desc Toggle floating
+hl.bind(mod .. " + Space", function()
+    hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+    hl.dispatch(hl.dsp.window.center())
+end)
+-- @desc Toggle floating/centralizar
 hl.bind(mod .. " + ALT + Space",  hl.dsp.window.pin({ action = "toggle" }))
 -- @desc Toggle pinned
 hl.bind(mod .. " + C",            hl.dsp.window.center())
