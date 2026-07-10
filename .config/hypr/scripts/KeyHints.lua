@@ -43,8 +43,8 @@ local shortcuts = {
   -- Category: Noctalia
   { "--- [Noctalia] --------------------------------", "", "" },
   { "ALT + Print", "[Noctalia] Noctalia shell command: screenshot-fullscreen pick", "exec_cmd(\"noctalia msg screenshot-fullscreen pick\")" },
-  { "CTRL + " .. mod .. " + Space", "[Noctalia] Noctalia shell command: media toggle", "exec_cmd(\"noctalia msg media toggle\")" },
   { "CTRL + ALT + L", "[Noctalia] Noctalia shell command: session lock", "exec_cmd(\"noctalia msg session lock\")" },
+  { "CTRL + SUPER + Space", "[Noctalia] Noctalia shell command: media toggle", "exec_cmd(\"noctalia msg media toggle\")" },
   { "Print", "[Noctalia] Noctalia shell command: screenshot-fullscreen", "exec_cmd(\"noctalia msg screenshot-fullscreen\")" },
   { "SUPER + ALT + N", "[Noctalia] Noctalia shell command: media next", "exec_cmd(\"noctalia msg media next\")" },
   { "SUPER + ALT + P", "[Noctalia] Noctalia shell command: media previous", "exec_cmd(\"noctalia msg media previous\")" },

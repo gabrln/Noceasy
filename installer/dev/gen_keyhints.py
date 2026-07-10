@@ -367,12 +367,15 @@ def _format_key(keyspec: str) -> str:
     surrounding quotes.
     """
     s = keyspec.strip()
-    # Pure literal.
-    if (s.startswith('"') and s.endswith('"')) or \
-            (s.startswith("'") and s.endswith("'")):
+    # Pure literal — must start/end with quotes AND not contain
+    # Lua concatenation (..), which means it's an expression, not a string.
+    if ".." not in s and (
+            (s.startswith('"') and s.endswith('"')) or
+            (s.startswith("'") and s.endswith("'"))):
         return s[1:-1]
     # Concatenation form: prefix .. " + suffix" (with optional `.. <var>`).
     if ".." in s:
+        # Pattern 1: variable .. "suffix" (with optional .. variable)
         m = re.match(
             r'^\s*(\w+)\s*\.\.\s*"([^"]*)"\s*(?:\.\.\s*(\w+))?\s*$', s
         )
@@ -383,6 +386,15 @@ def _format_key(keyspec: str) -> str:
                 if var:
                     return f"{prefix_val}{suffix}{{{var}}}"
                 return f"{prefix_val}{suffix}"
+        # Pattern 2: "prefix" .. variable .. "suffix"
+        m = re.match(
+            r'^\s*"([^"]*)"\s*\.\.\s*(\w+)\s*\.\.\s*"([^"]*)"\s*$', s
+        )
+        if m:
+            prefix, var, suffix = m.group(1), m.group(2), m.group(3)
+            var_val = _resolve_var(var)
+            if var_val is not None:
+                return f"{prefix}{var_val}{suffix}"
     return s.strip('"\'')
 
 
