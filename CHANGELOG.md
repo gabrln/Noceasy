@@ -104,6 +104,3 @@ loosely based on [Keep a Changelog](https://keepachangelog.com/).
 - **Migrated from bash to Python**: 6 bash lib files and 15 bash modules removed; replaced by ~2500 LOC of typed Python.
 - Logic preserved: state skip-if-done, atomic backups with collision suffix, `sudo` -> `runuser` + polkit migration.
 
-[v0.3.0]: https://github.com/gabrln/Noceasy/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/gabrln/Noceasy/compare/v0.1.0...v0.2.0
-[v0.1.0]: https://github.com/gabrln/Noceasy/releases/tag/v0.1.0

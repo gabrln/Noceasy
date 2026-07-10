@@ -2,11 +2,8 @@
 # install.sh - Bootstrap for Noceasy (Noctalia quick installer)
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/gabrln/Noceasy/main/install.sh | bash
-#   NOCEASY_VERSION=v1.5.0 bash install.sh
 #
 # Environment variables:
-#   NOCEASY_VERSION  Tag/branch to clone (default: main)
-#   NOCEASY_SHA256   SHA256 of the commit/tag (optional, validates after clone)
 #   NO_COLOR=1       Disables colors in Python too
 #
 # Behavior:
@@ -14,25 +11,22 @@
 #   2. Ensures git and python (>= 3.11)
 #   3. Installs python-rich (framework dep) via sudo
 #   4. Clones (or updates) the repo in ~/Projects/Noceasy
-#   5. Validates SHA256 of the commit if NOCEASY_SHA256 is set
-#   6. exec python3 -m installer "$@"
+#   5. exec python3 -m installer "$@"
 
 set -euo pipefail
 
 REPO_URL="https://github.com/gabrln/Noceasy.git"
 CLONE_SUBDIR="Projects/Noceasy"
-NOCEASY_VERSION="${NOCEASY_VERSION:-main}"
-NOCEASY_SHA256="${NOCEASY_SHA256:-}"
 
-# Cores
+# Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
 error() {
-  printf '%b[ERRO]%b %s\n' "$RED" "$NC" "$1" >&2
-  exit "${2:-1}"
+  printf '%b[ERROR]%b %s\n' "$RED" "$NC" "$1" >&2
+  exit 1
 }
 
 info() {
@@ -47,11 +41,9 @@ success() {
 
 ARCH="$(uname -m)"
 case "$ARCH" in
-  x86_64)  ARCH_NAME="amd64" ;;
-  aarch64) ARCH_NAME="arm64" ;;
-  *)
-    error "Unsupported architecture: $ARCH. Supported: x86_64, aarch64."
-    ;;
+  x86_64|amd64)  ARCH_NAME="x86_64" ;;
+  aarch64)       ARCH_NAME="aarch64" ;;
+  *)             error "Unsupported architecture: $ARCH" ;;
 esac
 info "Architecture: $ARCH ($ARCH_NAME)"
 
@@ -65,13 +57,10 @@ fi
 source /etc/os-release
 
 case "${ID:-unknown}" in
-  arch|cachyos)
-    info "System: ${PRETTY_NAME:-$ID}"
-    ;;
-  *)
-    error "Unsupported distribution: ${ID:-unknown}. Supported: Arch, CachyOS."
-    ;;
+  arch|cachyos) ;;
+  *)             error "Unsupported distribution: ${ID:-unknown}. Only Arch and CachyOS are supported." ;;
 esac
+info "Distribution: ${PRETTY_NAME:-$ID}"
 
 # --- Current user detection ---------------------------------------------------
 
@@ -86,11 +75,13 @@ if [[ -z "$USER_HOME" || ! -d "$USER_HOME" ]]; then
   error "Could not determine HOME for user '$REAL_USER'."
 fi
 
+info "User: $REAL_USER ($USER_HOME)"
+
 # --- System deps -------------------------------------------------------------
 
 if ! command -v git &>/dev/null; then
   info "Installing git..."
-  sudo pacman -Sy --needed --noconfirm git
+  sudo pacman -S --needed --noconfirm git >/dev/null 2>&1 || error "Failed to install git."
 fi
 
 if ! command -v python3 &>/dev/null; then
@@ -108,64 +99,26 @@ fi
 # Ensure rich (framework TUI dep)
 if ! python3 -c "import rich" &>/dev/null; then
   info "Installing python-rich..."
-  if ! sudo pacman -S --needed --noconfirm python-rich; then
-    error "Failed to install python-rich. Install manually: pacman -S python-rich"
-  fi
+  sudo pacman -S --needed --noconfirm python-rich >/dev/null 2>&1 \
+    || error "Failed to install python-rich. Install it manually: sudo pacman -S python-rich"
 fi
 
 # --- Clone or update ---------------------------------------------------------
 
 REPO_DIR="$USER_HOME/$CLONE_SUBDIR"
-GIT_CLONE_ARGS=(--depth=1)
-
-# For SHA pin, we can't use --depth=1 (we need the exact commit)
-if [[ -n "$NOCEASY_SHA256" ]]; then
-  GIT_CLONE_ARGS=()
-fi
 
 if [[ -d "$REPO_DIR/.git" ]]; then
   info "Updating repository in $REPO_DIR..."
-
-  if [[ -n "$NOCEASY_SHA256" ]]; then
-    git -C "$REPO_DIR" fetch --unshallow >/dev/null 2>&1 || error "git fetch failed"
-  fi
-
   git -C "$REPO_DIR" -c safe.directory='*' pull \
     >/dev/null 2>&1 || error "git pull failed in $REPO_DIR"
-
-  # If NOCEASY_VERSION is a tag/SHA, check it out
-  if [[ "$NOCEASY_VERSION" != "main" ]] && [[ "$NOCEASY_VERSION" != "master" ]]; then
-    info "Checking out $NOCEASY_VERSION..."
-    git -C "$REPO_DIR" checkout "$NOCEASY_VERSION" \
-      || error "git checkout failed for $NOCEASY_VERSION"
-  fi
 else
-  info "Cloning repository (version: $NOCEASY_VERSION) to $REPO_DIR..."
+  info "Cloning repository to $REPO_DIR..."
   mkdir -p "$USER_HOME/Projects"
-
-  if [[ -n "$NOCEASY_SHA256" ]]; then
-    git clone "$REPO_URL" "$REPO_DIR" \
-      >/dev/null 2>&1 || error "git clone failed to $REPO_DIR"
-    git -C "$REPO_DIR" checkout "$NOCEASY_VERSION" \
-      >/dev/null 2>&1 || error "git checkout failed for $NOCEASY_VERSION"
-  else
-    git clone --depth=1 --branch "$NOCEASY_VERSION" "$REPO_URL" "$REPO_DIR" \
-      >/dev/null 2>&1 || error "git clone failed to $REPO_DIR"
-  fi
+  git clone --depth=1 "$REPO_URL" "$REPO_DIR" \
+    >/dev/null 2>&1 || error "git clone failed to $REPO_DIR"
 fi
 
-# --- Optional SHA256 validation ----------------------------------------------
-
-if [[ -n "$NOCEASY_SHA256" ]]; then
-  info "Validating commit SHA256..."
-  ACTUAL_SHA=$(git -C "$REPO_DIR" rev-parse HEAD | tr -d '[:space:]')
-  if [[ "$ACTUAL_SHA" != "$NOCEASY_SHA256" ]]; then
-    error "SHA256 mismatch: expected $NOCEASY_SHA256, got $ACTUAL_SHA"
-  fi
-  success "SHA256 validated: $ACTUAL_SHA"
-fi
-
-success "Repository ready in $REPO_DIR (version: $NOCEASY_VERSION)"
+success "Repository ready in $REPO_DIR"
 
 # --- Delegate to Python entrypoint -------------------------------------------
 
@@ -179,7 +132,6 @@ env \
   USER_HOME="$USER_HOME" \
   REPO_DIR="$REPO_DIR" \
   NO_COLOR="${NO_COLOR:-}" \
-  NOCEASY_VERSION="$NOCEASY_VERSION" \
   PYTHONIOENCODING="utf-8" \
   python3 -m installer "$@"
 PY_EXIT=$?

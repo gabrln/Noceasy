@@ -22,21 +22,6 @@ install.sh                          bash bootstrap
    └─ modules/                     16 install steps
 ```
 
-## Pin and verify
-
-```bash
-# Pin a tag
-NOCEASY_VERSION=v0.1.0 bash install.sh
-
-# Pin + verify commit SHA
-NOCEASY_VERSION=v0.1.0 NOCEASY_SHA256=5ba80b0... bash install.sh
-```
-
-`NOCEASY_VERSION` ensures `git clone` pulls that exact tag (no surprises).
-`NOCEASY_SHA256` validates the commit SHA after clone (defense against
-GitHub compromise). Both are optional; the defaults are `main` and
-"no check".
-
 The installer runs as the **real user** — privilege escalation is
 handled per-operation by `privesc.run_privileged()`, which auto-detects
 `sudo`/`doas`/`run0` and asks for the password once at startup. The

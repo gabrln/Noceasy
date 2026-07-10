@@ -11,9 +11,6 @@ Usage:
 
 Environment variables:
   NO_COLOR=1            Disable colored output (https://no-color.org/)
-  NOCEASY_VERSION       Pin version (read by install.sh)
-  NOCEASY_SHA256        Commit SHA to verify (read by install.sh)
-
 Run via `bash install.sh` (escalates as needed).
 """
 
