@@ -39,7 +39,6 @@ known_hosts
 
 # ===== Noctalia generated =====
 .config/starship.toml
-.config/qt6ct/
 
 # ===== XDG generated =====
 .config/user-dirs.dirs

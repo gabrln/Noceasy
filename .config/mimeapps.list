@@ -34,6 +34,7 @@ xhtml+xml=firefox.desktop
 application/x-extension-xhtml=firefox.desktop
 application/x-extension-xht=firefox.desktop
 x-scheme-handler/antigravity=antigravity.desktop
+text/x-systemd-unit=nvim.desktop
 
 [Added Associations]
 x-scheme-handler/http=firefox.desktop;
@@ -46,3 +47,4 @@ application/x-extension-shtml=firefox.desktop;
 application/xhtml+xml=firefox.desktop;
 application/x-extension-xhtml=firefox.desktop;
 application/x-extension-xht=firefox.desktop;
+text/x-systemd-unit=nvim.desktop;
