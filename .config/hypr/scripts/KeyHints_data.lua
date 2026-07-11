@@ -4,7 +4,7 @@ return {
   { "SUPER + B", "Abrir navegador Firefox", "exec_cmd(\"firefox\")", "Apps" },
   { "SUPER + E", "Abrir gerenciador de arquivos yazi", "exec_cmd(\"kitty -e yazi\")", "Apps" },
   { "SUPER + SHIFT + E", "Abrir thunar", "exec_cmd(\"thunar\")", "Apps" },
-  { "SUPER + A", "Abrir herdr", "exec_cmd(\"herdr\")", "Apps" },
+  { "SUPER + A", "Abrir herdr", "exec_cmd(\"kitty -e herdr\")", "Apps" },
   { "SUPER + Q", "Fechar janela", "window.close()", "Windows" },
   { "SUPER + Space", "Toggle floating/centralizar", "window.float({ action = \"toggle\" })) hl.dispatch(hl.dsp.window.resize({ x = 1280, y = 720 })) hl.dispatch(hl.dsp.window.center()", "Windows" },
   { "SUPER + ALT + Space", "Toggle pinned", "window.pin({ action = \"toggle\" })", "Windows" },

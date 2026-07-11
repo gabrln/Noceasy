@@ -70,7 +70,7 @@ local fzf_cmd = table.concat({
     "--border=rounded",
     '--header=" ENTER: Copiar | ESC: Sair "',
     '--prompt=" 🔍 Buscar: "',
-    "--height=80%",
+    "--height=100%",
     "--info=inline",
     "--ansi",
 }, " ")
