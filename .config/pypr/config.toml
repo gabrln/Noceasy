@@ -47,7 +47,7 @@ size = "70% 80%"
 lazy = true
 match_by = "class"
 process_tracking = false
-
+close_on_hide = true
 # ── Gamemode ────────────────────────────────────────────────────────────
 
 [gamemode]
