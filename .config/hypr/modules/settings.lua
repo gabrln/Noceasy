@@ -12,6 +12,9 @@ hl.config({
 		col = {
 			active_border = "rgba(cba6f7ff)",
 			inactive_border = "rgba(646789ff)",
+			-- Pyprland scratchpads usam group=deny, exigem nogroup_border explicito
+			nogroup_border = "rgba(646789ff)",
+			nogroup_border_active = "rgba(cba6f7ff)",
 		},
 	},
 	scrolling = {
