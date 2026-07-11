@@ -38,8 +38,6 @@ hl.bind(mod .. " + ALT + Space",  hl.dsp.window.pin({ action = "toggle" }))
 hl.bind(mod .. " + C",            hl.dsp.window.center())
 -- @desc Centralizar janela
 
--- Redimensionar janela por pixels (Ctrl + Alt + Setas)
--- @desc Redimensionar janela baixo
 
 -- Grupos e redimensionamento
 hl.bind(mod .. " + R",         hl.dsp.layout("colresize +0.1"))
@@ -117,6 +115,8 @@ hl.bind(mod .. " + Slash",  hl.dsp.exec_cmd("pypr toggle keyhints"))
 -- @desc Abrir keyhints
 hl.bind(mod .. " + SHIFT + U", hl.dsp.exec_cmd("pypr toggle spotify"))
 -- @desc Toggle Spotify
+hl.bind(mod .. " + S",      hl.dsp.exec_cmd("pypr toggle steam"))
+-- @desc Toggle Steam
 
 -- ═══ Noctalia Panels ═══════════════════════════════════════════════════════
 -- @group Noctalia
@@ -202,8 +202,6 @@ hl.bind(mod .. " + ALT + P",  hl.dsp.exec_cmd("noctalia msg media previous"),  {
 
 -- ═══ Screenshots ═══════════════════════════════════════════════════════════
 
-hl.bind("Print",                   hl.dsp.exec_cmd("noctalia msg mic-mute"), { locked = true })
--- @desc Silenciar microfone
 hl.bind(mod .. " + Print",         hl.dsp.exec_cmd("noctalia msg screenshot-fullscreen"))
 -- @desc Captura de tela fullscreen
 hl.bind(mod .. " + SHIFT + Print", hl.dsp.exec_cmd("noctalia msg screenshot-region"))
@@ -226,5 +224,3 @@ hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 -- @desc Arrastar janela
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 -- @desc Redimensionar janela
-hl.bind(mod .. " + S",      hl.dsp.exec_cmd("pypr toggle steam"))
--- @desc Toggle Steam

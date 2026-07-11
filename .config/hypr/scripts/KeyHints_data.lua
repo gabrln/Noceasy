@@ -52,6 +52,7 @@ return {
   { "SUPER + F1", "Toggle btop", "exec_cmd(\"pypr toggle btop\")", "Scratchpads" },
   { "SUPER + Slash", "Abrir keyhints", "exec_cmd(\"pypr toggle keyhints\")", "Scratchpads" },
   { "SUPER + SHIFT + U", "Toggle Spotify", "exec_cmd(\"pypr toggle spotify\")", "Scratchpads" },
+  { "SUPER + S", "Toggle Steam", "exec_cmd(\"pypr toggle steam\")", "Scratchpads" },
   { "SUPER + D", "Abrir launcher", "exec_cmd(\"noctalia msg panel-toggle launcher\")", "Noctalia" },
   { "SUPER + V", "Abrir clipboard", "exec_cmd(\"noctalia msg panel-toggle clipboard\")", "Noctalia" },
   { "SUPER + O", "Abrir notificações", "exec_cmd(\"noctalia msg panel-toggle control-center notifications\")", "Noctalia" },
@@ -78,7 +79,6 @@ return {
   { "CTRL + SUPER + Space", "Play/Pausar", "exec_cmd(\"noctalia msg media toggle\")", "Media" },
   { "SUPER + ALT + N", "Próxima faixa", "exec_cmd(\"noctalia msg media next\")", "Media" },
   { "SUPER + ALT + P", "Faixa anterior", "exec_cmd(\"noctalia msg media previous\")", "Media" },
-  { "Print", "Silenciar microfone", "exec_cmd(\"noctalia msg mic-mute\")", "Screenshots" },
   { "SUPER + Print", "Captura de tela fullscreen", "exec_cmd(\"noctalia msg screenshot-fullscreen\")", "Screenshots" },
   { "SUPER + SHIFT + Print", "Captura de tela região", "exec_cmd(\"noctalia msg screenshot-region\")", "Screenshots" },
   { "ALT + Print", "Captura de tela com seletor", "exec_cmd(\"noctalia msg screenshot-fullscreen pick\")", "Screenshots" },
@@ -86,5 +86,4 @@ return {
   { "SUPER + SHIFT + D", "Executar WindowInfo.lua", "exec_cmd(scripts_dir .. \"/WindowInfo.lua\")", "Scripts" },
   { "SUPER + mouse:272", "Arrastar janela", "window.drag()", "Mouse" },
   { "SUPER + mouse:273", "Redimensionar janela", "window.resize()", "Mouse" },
-  { "SUPER + S", "Toggle Steam", "exec_cmd(\"pypr toggle steam\")", "Mouse" },
 }
