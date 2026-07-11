@@ -219,8 +219,8 @@ hl.bind(mod .. " + ALT + P",  hl.dsp.exec_cmd("noctalia msg media previous"),  {
 
 -- ═══ Screenshots ═══════════════════════════════════════════════════════════
 
-hl.bind("Print",                   hl.dsp.exec_cmd("noctalia msg screenshot-fullscreen"))
--- @desc Captura de tela fullscreen
+hl.bind("Print",                   hl.dsp.exec_cmd("noctalia msg mic-mute"), { locked = true })
+-- @desc Silenciar microfone
 hl.bind(mod .. " + Print",         hl.dsp.exec_cmd("noctalia msg screenshot-fullscreen"))
 -- @desc Captura de tela fullscreen
 hl.bind(mod .. " + SHIFT + Print", hl.dsp.exec_cmd("noctalia msg screenshot-region"))

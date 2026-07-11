@@ -89,7 +89,7 @@ return {
   { "CTRL + SUPER + Space", "Play/Pausar", "exec_cmd(\"noctalia msg media toggle\")", "Media" },
   { "SUPER + ALT + N", "Próxima faixa", "exec_cmd(\"noctalia msg media next\")", "Media" },
   { "SUPER + ALT + P", "Faixa anterior", "exec_cmd(\"noctalia msg media previous\")", "Media" },
-  { "Print", "Captura de tela fullscreen", "exec_cmd(\"noctalia msg screenshot-fullscreen\")", "Screenshots" },
+  { "Print", "Silenciar microfone", "exec_cmd(\"noctalia msg mic-mute\")", "Screenshots" },
   { "SUPER + Print", "Captura de tela fullscreen", "exec_cmd(\"noctalia msg screenshot-fullscreen\")", "Screenshots" },
   { "SUPER + SHIFT + Print", "Captura de tela região", "exec_cmd(\"noctalia msg screenshot-region\")", "Screenshots" },
   { "ALT + Print", "Captura de tela com seletor", "exec_cmd(\"noctalia msg screenshot-fullscreen pick\")", "Screenshots" },
