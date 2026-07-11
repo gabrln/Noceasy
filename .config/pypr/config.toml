@@ -1,0 +1,49 @@
+[pyprland]
+plugins = [
+    "scratchpads",
+    "gamemode",
+    "expose",
+]
+
+# ── Scratchpads ────────────────────────────────────────────────────────
+
+[scratchpads.terminal]
+command = "kitty --class kitty-drop"
+class = "kitty-drop"
+animation = "fromTop"
+size = "75% 60%"
+margin = 50
+lazy = true
+unfocus = "hide"
+hysteresis = 0.3
+pinned = true
+
+[scratchpads.btop]
+command = "kitty --class btop-scratch -e btop"
+class = "btop-scratch"
+animation = "fromTop"
+size = "75% 60%"
+lazy = true
+
+[scratchpads.keyhints]
+command = "kitty --class keyhints-scratch -e /home/gabrln/.config/hypr/scripts/KeyHints_runner.lua"
+class = "keyhints-scratch"
+animation = "fromTop"
+size = "50% 50%"
+lazy = true
+
+[scratchpads.spotify]
+command = "spotify-launcher"
+class = "Spotify"
+animation = "fromTop"
+size = "60% 70%"
+lazy = true
+match_by = "class"
+process_tracking = false
+
+# ── Gamemode ────────────────────────────────────────────────────────────
+
+[gamemode]
+auto = true
+patterns = ["steam_app_*", "gamescope*", "lutris*", "heroic*", "dota2", "cs2", "wine*"]
+notify = true

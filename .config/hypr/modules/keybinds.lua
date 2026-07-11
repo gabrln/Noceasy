@@ -105,6 +105,8 @@ for i = 1, 9 do
     hl.bind(mod .. " + " .. i,         hl.dsp.focus({ workspace = i }))
     hl.bind(mod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
 end
+hl.bind(mod .. " + X",             hl.dsp.exec_cmd("pypr expose"))
+-- @desc Mostrar todas as janelas (expose)
 hl.bind(mod .. " + 0",         hl.dsp.focus({ workspace = 10 }))
 hl.bind(mod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = 10 }))
 
@@ -114,32 +116,18 @@ hl.bind(mod .. " + SHIFT + mouse_down", hl.dsp.window.move({ workspace = "e-1" }
 hl.bind(mod .. " + SHIFT + mouse_up",   hl.dsp.window.move({ workspace = "e+1" }))
 
 
--- ═══ Scratchpads (Pyprland) ═══════════════════════════════════════════
+-- ═══ Scratchpads ═══════════════════════════════════════════════════════
 
-hl.bind(mod .. " + T",            hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr toggle terminal"))
+hl.bind(mod .. " + T",            hl.dsp.exec_cmd("pypr toggle terminal"))
 -- @desc Toggle terminal dropdown
-hl.bind(mod .. " + SHIFT + Return", hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr toggle terminal"))
+hl.bind(mod .. " + SHIFT + Return", hl.dsp.exec_cmd("pypr toggle terminal"))
 -- @desc Toggle terminal dropdown
-hl.bind(mod .. " + F1",     hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr toggle btop"))
+hl.bind(mod .. " + F1",     hl.dsp.exec_cmd("pypr toggle btop"))
 -- @desc Toggle btop
-hl.bind(mod .. " + Slash",  hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr toggle keyhints"))
+hl.bind(mod .. " + Slash",  hl.dsp.exec_cmd("pypr toggle keyhints"))
 -- @desc Abrir keyhints
-
--- ═══ Pyprland Plugins ════════════════════════════════════════════════
-
-hl.bind(mod .. " + SHIFT + Slash", hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr menu"))
--- @desc Abrir shortcuts menu
-hl.bind(mod .. " + SHIFT + C",     hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr stash_toggle calc"))
--- @desc Toggle stash calculadora
-hl.bind(mod .. " + SHIFT + U",     hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr stash_toggle music"))
--- @desc Toggle stash musica
-hl.bind(mod .. " + X",             hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr expose"))
--- @desc Expose todas as janelas
-hl.bind(mod .. " + Z",             hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr zoom ++0.5"))
--- @desc Zoom in
-hl.bind(mod .. " + SHIFT + Z",     hl.dsp.exec_cmd("/home/gabrln/.local/bin/pypr zoom"))
--- @desc Reset zoom
-
+hl.bind(mod .. " + SHIFT + U", hl.dsp.exec_cmd("pypr toggle spotify"))
+-- @desc Toggle Spotify
 
 -- ═══ Noctalia Panels ═══════════════════════════════════════════════════════
 -- @group Noctalia

@@ -16,55 +16,6 @@ end
 hl.on("monitor.added", auto_select_layout)
 hl.on("monitor.removed", auto_select_layout)
 
--- 2. Auto Game Mode (disables blur, shadows and animations in games)
-local gamemode_active = false
-
-local function update_gamemode()
-    local ws = hl.get_active_workspace()
-    if not ws then return end
-    local windows = hl.get_workspace_windows(ws.name)
-    if not windows then return end
-
-    local has_game = false
-    for _, win in ipairs(windows) do
-        local cls = string.lower(win.class or "")
-        local title = string.lower(win.title or "")
-        -- Anchor matches to the class name boundaries to avoid
-        -- false positives like "autoplace.exe" matching "dota".
-        if cls:find("steam_app") or cls:find("gamescope") or cls:find("lutris")
-            or cls:find("heroic") or cls:find("dota2") or cls:find("cs2")
-            or cls:find("wine") then
-            has_game = true
-            break
-        end
-    end
-
-    if has_game and not gamemode_active then
-        gamemode_active = true
-        hl.exec_cmd("notify-send -t 3000 -a System 'Game Mode' 'Automatically enabled (reduced visual effects)'")
-        hl.config({
-            decoration = {
-                blur = { enabled = false },
-                drop_shadow = false,
-            },
-            animations = { enabled = false }
-        })
-    elseif not has_game and gamemode_active then
-        gamemode_active = false
-        hl.exec_cmd("notify-send -t 3000 -a System 'Game Mode' 'Disabled (visual effects restored)'")
-        hl.config({
-            decoration = {
-                blur = { enabled = true },
-                drop_shadow = true,
-            },
-            animations = { enabled = true }
-        })
-    end
-end
-
-hl.on("workspace.active", update_gamemode)
-hl.on("window.destroy", update_gamemode)
-hl.on("window.move_to_workspace", update_gamemode)
 
 -- 3. Native battery monitoring via Lua timer (lightweight 30s check)
 local notified_10 = false

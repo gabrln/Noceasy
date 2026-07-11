@@ -15,6 +15,7 @@ configs = [
   "noctalia",
   "nvim",
   "qt6ct",
+  "pypr",
 ]
 
 [special]

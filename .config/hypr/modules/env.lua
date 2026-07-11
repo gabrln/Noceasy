@@ -25,6 +25,9 @@ hl.env("XCURSOR_SIZE", "24")
 hl.env("EDITOR", "nvim")
 hl.env("TERMINAL", "kitty")
 
+-- Ensure ~/.local/bin is in PATH (for uv/pip user-installed tools like pyprland)
+hl.env("PATH", os.getenv("HOME") .. "/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/bin")
+
 -- Ensure /usr/share is in XDG_DATA_DIRS for mime-info
 local current_data_dirs = os.getenv("XDG_DATA_DIRS") or ""
 if not current_data_dirs:find("/usr/share") then
