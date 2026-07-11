@@ -1,9 +1,5 @@
 # Pacotes AUR instalados via yay
 
-[[packages]]
-name = "noctalia-git"
-description = "Noctalia V5 shell"
-rebuild_on_update = true
 
 [[packages]]
 name = "noctalia-greeter-git"

@@ -1,45 +1,22 @@
 # Pacotes oficiais dos repositórios Arch/CachyOS
 # Agrupados conforme o install.sh original.
 
-[[packages]]
-name = "base"
-group = "base"
-description = "Base system"
+
+
+
 
 [[packages]]
-name = "base-devel"
-group = "base"
-description = "Build tools"
-
-[[packages]]
-name = "linux-cachyos"
-group = "base"
-description = "CachyOS kernel"
-
-[[packages]]
-name = "linux-cachyos-headers"
-group = "base"
-description = "CachyOS kernel headers"
+name = "noctalia"
+group = "wm"
+description = "Noctalia V5 shell (CachyOS repo)"
 
 [[packages]]
 name = "cmake"
 group = "base"
 description = "Build system"
 
-[[packages]]
-name = "cpio"
-group = "base"
-description = "Archive tool"
 
-[[packages]]
-name = "pkgconf"
-group = "base"
-description = "Pkg-config replacement"
 
-[[packages]]
-name = "git"
-group = "base"
-description = "Version control"
 
 [[packages]]
 name = "git-delta"
@@ -61,10 +38,6 @@ name = "brightnessctl"
 group = "base"
 description = "Brightness control"
 
-[[packages]]
-name = "zsh"
-group = "base"
-description = "Z shell"
 
 [[packages]]
 name = "just"
@@ -81,49 +54,21 @@ name = "npm"
 group = "base"
 description = "Node package manager"
 
-[[packages]]
-name = "unzip"
-group = "base"
-description = "Zip extraction tool"
-
-[[packages]]
-name = "networkmanager"
-group = "networking"
-description = "Network manager"
-
-[[packages]]
-name = "bluez"
-group = "networking"
-description = "Bluetooth stack"
-
-[[packages]]
-name = "bluez-utils"
-group = "networking"
-description = "Bluetooth utilities"
 
 
-[[packages]]
-name = "dbus"
-group = "display"
-description = "D-Bus message bus"
+
+
+
 
 [[packages]]
 name = "greetd"
 group = "display"
 description = "Display manager"
 
-[[packages]]
-name = "polkit"
-group = "display"
-description = "PolicyKit daemon (pkexec)"
 
 # Polkit precisa de um agent rodando na sessão do usuário para
 # abrir prompts. gnome-shell traz polkit-gnome como dep. Em outras
 # composições (Hyprland puro), instale polkit-gnome explicitamente.
-[[packages]]
-name = "polkit-gnome"
-group = "display"
-description = "Polkit agent (GNOME) — exibe prompts de autenticação"
 
 [[packages]]
 name = "atuin"
@@ -275,30 +220,18 @@ name = "engrampa"
 group = "media"
 description = "MATE archive manager (replaces file-roller)"
 
-[[packages]]
-name = "firefox"
-group = "media"
-description = "Web browser"
 
 [[packages]]
 name = "obsidian"
 group = "media"
 description = "Knowledge base"
 
-[[packages]]
-name = "pavucontrol"
-group = "media"
-description = "PulseAudio volume control"
 
 [[packages]]
 name = "nwg-look"
 group = "media"
 description = "GTK theme switcher"
 
-[[packages]]
-name = "xdg-user-dirs"
-group = "media"
-description = "XDG user dirs"
 
 [[packages]]
 name = "xdg-desktop-portal-gtk"
@@ -310,15 +243,7 @@ name = "ttf-jetbrains-mono-nerd"
 group = "themes"
 description = "Nerd font"
 
-[[packages]]
-name = "noto-fonts"
-group = "themes"
-description = "Noto fonts"
 
-[[packages]]
-name = "noto-fonts-emoji"
-group = "themes"
-description = "Noto emoji fonts"
 
 [[packages]]
 name = "wl-clip-persist"
@@ -380,10 +305,6 @@ name = "nano"
 group = "system"
 description = "Simple editor"
 
-[[packages]]
-name = "lua"
-group = "system"
-description = "Lua interpreter"
 
 [[packages]]
 name = "luajit"
