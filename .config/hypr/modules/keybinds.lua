@@ -149,12 +149,10 @@ hl.bind(mod .. " + SHIFT + Y", hl.dsp.exec_cmd("noctalia msg caffeine-toggle"))
 -- Wallpaper e tema
 hl.bind(mod .. " + W",         hl.dsp.exec_cmd("noctalia msg wallpaper-random"))
 -- @desc Wallpaper aleatório
-
-
--- ═══ Session ════════════════════════════════════════════════════════════════
-
 hl.bind("CTRL + ALT + L", hl.dsp.exec_cmd("noctalia msg session lock"))
 -- @desc Bloquear tela
+
+
 
 
 -- ═══ Media ══════════════════════════════════════════════════════════════════

@@ -62,7 +62,7 @@ return {
   { "SUPER + SHIFT + N", "Toggle nightlight", "exec_cmd(\"noctalia msg nightlight-toggle\")", "Noctalia" },
   { "SUPER + SHIFT + Y", "Toggle caffeine", "exec_cmd(\"noctalia msg caffeine-toggle\")", "Noctalia" },
   { "SUPER + W", "Wallpaper aleatório", "exec_cmd(\"noctalia msg wallpaper-random\")", "Noctalia" },
-  { "CTRL + ALT + L", "Bloquear tela", "exec_cmd(\"noctalia msg session lock\")", "Session" },
+  { "CTRL + ALT + L", "Bloquear tela", "exec_cmd(\"noctalia msg session lock\")", "Noctalia" },
   { "XF86AudioRaiseVolume", "Aumentar volume", "exec_cmd(\"noctalia msg volume-up\")", "Media" },
   { "XF86AudioLowerVolume", "Diminuir volume", "exec_cmd(\"noctalia msg volume-down\")", "Media" },
   { "XF86AudioMute", "Silenciar volume", "exec_cmd(\"noctalia msg volume-mute\")", "Media" },
