@@ -39,13 +39,6 @@ hl.bind(mod .. " + C",            hl.dsp.window.center())
 -- @desc Centralizar janela
 
 -- Redimensionar janela por pixels (Ctrl + Alt + Setas)
-hl.bind("CTRL + ALT + Left",  hl.dsp.window.resize({ x = -100, y = 0, relative = true }))
--- @desc Redimensionar janela esquerda
-hl.bind("CTRL + ALT + Right", hl.dsp.window.resize({ x = 100,  y = 0, relative = true }))
--- @desc Redimensionar janela direita
-hl.bind("CTRL + ALT + Up",    hl.dsp.window.resize({ x = 0,  y = -100, relative = true }))
--- @desc Redimensionar janela cima
-hl.bind("CTRL + ALT + Down",  hl.dsp.window.resize({ x = 0,  y = 100, relative = true }))
 -- @desc Redimensionar janela baixo
 
 -- Grupos e redimensionamento
@@ -112,17 +105,11 @@ hl.bind(mod .. " + X",             hl.dsp.exec_cmd("pypr expose"))
 hl.bind(mod .. " + 0",         hl.dsp.focus({ workspace = 10 }))
 hl.bind(mod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = 10 }))
 
-hl.bind(mod .. " + mouse_down",         hl.dsp.focus({ workspace = "e-1" }))
-hl.bind(mod .. " + mouse_up",           hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mod .. " + SHIFT + mouse_down", hl.dsp.window.move({ workspace = "e-1" }))
-hl.bind(mod .. " + SHIFT + mouse_up",   hl.dsp.window.move({ workspace = "e+1" }))
 
 
 -- ═══ Scratchpads ═══════════════════════════════════════════════════════
 
 hl.bind(mod .. " + T",            hl.dsp.exec_cmd("pypr toggle terminal"))
--- @desc Toggle terminal dropdown
-hl.bind(mod .. " + SHIFT + Return", hl.dsp.exec_cmd("pypr toggle terminal"))
 -- @desc Toggle terminal dropdown
 hl.bind(mod .. " + F1",     hl.dsp.exec_cmd("pypr toggle btop"))
 -- @desc Toggle btop
@@ -136,8 +123,6 @@ hl.bind(mod .. " + SHIFT + U", hl.dsp.exec_cmd("pypr toggle spotify"))
 
 hl.bind(mod .. " + D",         hl.dsp.exec_cmd("noctalia msg panel-toggle launcher"))
 -- @desc Abrir launcher
-hl.bind(mod .. " + P",         hl.dsp.exec_cmd("noctalia msg panel-toggle control-center"))
--- @desc Abrir centro de controle
 hl.bind(mod .. " + V",         hl.dsp.exec_cmd("noctalia msg panel-toggle clipboard"))
 -- @desc Abrir clipboard
 hl.bind(mod .. " + O",         hl.dsp.exec_cmd("noctalia msg panel-toggle control-center notifications"))
@@ -164,8 +149,6 @@ hl.bind(mod .. " + SHIFT + Y", hl.dsp.exec_cmd("noctalia msg caffeine-toggle"))
 -- Wallpaper e tema
 hl.bind(mod .. " + W",         hl.dsp.exec_cmd("noctalia msg wallpaper-random"))
 -- @desc Wallpaper aleatório
-hl.bind(mod .. " + SHIFT + W", hl.dsp.exec_cmd("noctalia msg theme-mode-toggle"))
--- @desc Toggle tema claro/escuro
 
 
 -- ═══ Session ════════════════════════════════════════════════════════════════
