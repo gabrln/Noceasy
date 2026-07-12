@@ -31,4 +31,15 @@ load_module("autostart")
 local ok, noctalia = pcall(require, "noctalia")
 if ok and noctalia and noctalia.apply_theme then
     noctalia.apply_theme()
+
+    -- Pyprland scratchpads usam group=deny, exigem nogroup_border explicito.
+    -- Usa as cores exportadas pelo tema para acompanhar trocas de tema.
+    hl.config({
+        general = {
+            col = {
+                nogroup_border = noctalia.colors.surface,
+                nogroup_border_active = noctalia.colors.primary,
+            },
+        },
+    })
 end
