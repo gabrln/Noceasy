@@ -151,6 +151,8 @@ hl.bind(mod .. " + W",         hl.dsp.exec_cmd("noctalia msg wallpaper-random"))
 -- @desc Wallpaper aleatório
 hl.bind("CTRL + ALT + L", hl.dsp.exec_cmd("noctalia msg session lock"))
 -- @desc Bloquear tela
+hl.bind("ALT + Tab", hl.dsp.exec_cmd("noctalia msg window-switcher"))
+-- @desc Alternar entre janelas (window switcher)
 
 
 
