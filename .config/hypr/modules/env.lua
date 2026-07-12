@@ -19,11 +19,11 @@ hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
--- Aceleracao de video Intel (VAAPI/VDPAU)
+-- Intel video acceleration (VAAPI/VDPAU)
 hl.env("LIBVA_DRIVER_NAME", "iHD")
 hl.env("VDPAU_DRIVER", "va_gl")
 
--- Compatibilidade Java AWT (fix telas cinzas em Minecraft etc.)
+-- Java AWT compatibility (fix gray screens in Minecraft, etc.)
 hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")
 
 -- Cursor and default tools (previously in .config/uwsm/env)
