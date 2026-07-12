@@ -11,11 +11,12 @@ hl.config({
 		resize_on_border = true,
 	},
 	scrolling = {
-		fullscreen_on_one_column = false,
+		fullscreen_on_one_column = true,
 		column_width = 0.8,
 		explicit_column_widths = "0.5,0.8,1.0",
 		direction = "right",
 		follow_focus = true,
+		focus_fit_method = 1,
 	},
 	decoration = {
 		rounding = 8,
