@@ -12,8 +12,9 @@ from pathlib import Path
 
 from installer.exec import run
 from installer.logger import log
-from installer.modules.base import Module, RunContext
 from installer.errors import fatal
+from installer.config import YAY_CHUNK_SIZE
+from installer.modules.base import Module, RunContext
 from installer.toml_cache import get_cache
 
 
@@ -31,19 +32,13 @@ _NINJA_STEP_RE = re.compile(r"^\[(\d+)/(\d+)\]")        # "[123/456] Building CX
 # just wastes CPU parsing markers that will never be seen.
 _STEP_UPDATE_INTERVAL = 0.1  # seconds
 
-YAY_CHUNK_SIZE = 10
-
-
 def _pacman_missing(pkgs: list[str]) -> list[str]:
-    # `pacman -T` is a read-only, offline query -- it should return in
-    # well under a second even for hundreds of packages. A generous
-    # timeout here turns a silent, indefinite hang (previously: no
-    # timeout at all) into a clear, actionable failure instead of a
-    # panel that just sits there with no visible cause.
-    try:
-        proc = run(["pacman", "-T", *pkgs], timeout=120)
-    except (OSError, ValueError):
-        return pkgs
+    proc = run(["pacman", "-T", *pkgs], timeout=30)
+    # pacman -T: returncode 0 = all installed, 1 = some missing.
+    # Any other code (124=timeout, 127=not found) is a real failure.
+    if proc.returncode not in (0, 1):
+        fatal(f"'pacman -T' failed unexpectedly (rc={proc.returncode}): "
+              f"{proc.stderr.strip() if proc.stderr else 'unknown error'}")
     return proc.stdout.strip().split() if proc.stdout else []
 
 
