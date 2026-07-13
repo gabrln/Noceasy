@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import glob
 import os
 import re
 import subprocess
@@ -9,11 +10,10 @@ import tempfile
 import time
 from pathlib import Path
 
-from installer.config import YAY_CHUNK_SIZE
-from installer.errors import fatal
 from installer.exec import run
 from installer.logger import log
 from installer.modules.base import Module, RunContext
+from installer.errors import fatal
 from installer.toml_cache import get_cache
 
 
@@ -31,6 +31,8 @@ _NINJA_STEP_RE = re.compile(r"^\[(\d+)/(\d+)\]")        # "[123/456] Building CX
 # just wastes CPU parsing markers that will never be seen.
 _STEP_UPDATE_INTERVAL = 0.1  # seconds
 
+YAY_CHUNK_SIZE = 10
+
 
 def _pacman_missing(pkgs: list[str]) -> list[str]:
     # `pacman -T` is a read-only, offline query -- it should return in
@@ -39,13 +41,10 @@ def _pacman_missing(pkgs: list[str]) -> list[str]:
     # timeout at all) into a clear, actionable failure instead of a
     # panel that just sits there with no visible cause.
     try:
-        out = run(["pacman", "-T", *pkgs], timeout=30)
-    except subprocess.TimeoutExpired:
-        fatal("'pacman -T' timed out after 30s while checking installed "
-              "AUR packages -- the pacman database may be locked by "
-              "another process.")
-        return []  # unreachable: fatal() exits the process
-    return out.stdout.strip().split() if out.stdout else []
+        proc = run(["pacman", "-T", *pkgs], timeout=120)
+    except (OSError, ValueError):
+        return pkgs
+    return proc.stdout.strip().split() if proc.stdout else []
 
 
 def _setup_askpass(sudo_password: str | None) -> dict[str, str]:
@@ -89,15 +88,14 @@ def _setup_askpass(sudo_password: str | None) -> dict[str, str]:
 
 def _teardown_askpass() -> None:
     """Remove any leftover SUDO_ASKPASS scripts from /tmp."""
-    import glob as _glob
-    for f in _glob.glob("/tmp/.noceasy-askpass-*.sh"):
+    for f in glob.glob("/tmp/.noceasy-askpass-*.sh"):
         try:
             Path(f).unlink()
         except OSError:
             pass
 
 
-def _install_streamed(cmd: list[str], sudo_password: str | None) -> bool:
+def _install_streamed(cmd: list[str], env: dict[str, str]) -> bool:
     """Run a command, streaming output in real-time.
 
     Shows the package being built, and — when the underlying build
@@ -109,7 +107,6 @@ def _install_streamed(cmd: list[str], sudo_password: str | None) -> bool:
       Building noctalia-git (42%)
       Building noctalia-git (123/456)
     """
-    env = _setup_askpass(sudo_password)
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -166,7 +163,7 @@ def _install_streamed(cmd: list[str], sudo_password: str | None) -> bool:
     return proc.wait() == 0
 
 
-def _install_chunk(chunk: list[str], sudo_password: str | None) -> bool:
+def _install_chunk(chunk: list[str], env: dict[str, str]) -> bool:
     """Install one chunk of AUR packages. Returns True on success."""
     argv = [
         "bash", "-c",
@@ -174,13 +171,12 @@ def _install_chunk(chunk: list[str], sudo_password: str | None) -> bool:
         "--needed --noconfirm --removemake",
         "bash", *chunk,
     ]
-    return _install_streamed(argv, sudo_password)
+    return _install_streamed(argv, env)
 
 
-def _install_one(pkg: str, sudo_password: str | None) -> bool:
+def _install_one(pkg: str, env: dict[str, str]) -> bool:
     return _install_streamed(
-        ["yay", "-S", "--needed", "--noconfirm", "--removemake", pkg],
-        sudo_password,
+        ["yay", "-S", "--needed", "--noconfirm", "--removemake", pkg], env
     )
 
 
@@ -214,14 +210,17 @@ class YayAurModule(Module):
         # Report real progress to the TUI: N packages to build.
         print(f"@PROGRESS:{len(missing)}")
 
+        # Create the askpass env once for this module
+        env = _setup_askpass(ctx.sudo_password)
+
         try:
             for i in range(0, len(missing), YAY_CHUNK_SIZE):
                 chunk = missing[i:i + YAY_CHUNK_SIZE]
-                if _install_chunk(chunk, ctx.sudo_password):
+                if _install_chunk(chunk, env):
                     print(f"@ADVANCE:{len(chunk)}")
                     continue
                 for pkg in chunk:
-                    if not _install_one(pkg, ctx.sudo_password):
+                    if not _install_one(pkg, env):
                         print(f"  failed: {pkg}")
                     print("@ADVANCE:1")
         finally:
