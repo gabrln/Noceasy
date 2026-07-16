@@ -461,6 +461,15 @@ class LiveDisplay:
         the Live display so the TUI continues.
         """
         import getpass
+        import sys
+        from installer.core.errors import fatal
+
+        if not sys.stdin.isatty():
+            fatal(
+                "Non-interactive terminal detected (no TTY). Cannot prompt for sudo password. "
+                "Please run 'sudo -v' beforehand or run the installer directly in an interactive terminal."
+            )
+
         self.stop()
         try:
             password = getpass.getpass("Senha [sudo]: ")

@@ -61,7 +61,7 @@ class ModuleRunner:
         """Detect the privilege-escalation tool and validate the password."""
         from installer import privesc
         tool = privesc.get_tool()
-        if privesc.check_cached(tool):
+        if self.options.dry_run or privesc.check_cached(tool):
             ctx.sudo_password = None
         else:
             password = tui.prompt_password()
