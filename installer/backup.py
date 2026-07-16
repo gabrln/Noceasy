@@ -157,6 +157,7 @@ def _dir_size(path: Path) -> int:
     """Total size of a directory in bytes."""
     return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
 
+
 def list_snapshots(label: str | None = None) -> list[str]:
     """List snapshot names, most recent first. Optionally filtered."""
     if not BACKUPS_DIR.exists():

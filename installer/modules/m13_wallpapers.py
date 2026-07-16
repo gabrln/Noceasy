@@ -36,6 +36,7 @@ def _expand_path(template: str, user_home: Path) -> Path:
         )
     return result
 
+
 def _curl_download(url: str, out: Path, timeout: int = 120) -> bool:
     return run(["curl", "-fsSL", "--retry", "3", "--retry-delay", "2",
                 "-o", str(out), url], timeout=timeout).returncode == 0

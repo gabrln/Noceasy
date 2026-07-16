@@ -32,6 +32,7 @@ def _create_greeter_user(ctx: RunContext) -> None:
     )
     privesc.run_privileged(["chmod", "755", str(home)], ctx.sudo_password)
 
+
 def _ensure_log_file(path: Path, ctx: RunContext) -> None:
     """Touch a log file and chown it to the greeter user."""
     privesc.run_privileged(["touch", str(path)], ctx.sudo_password)

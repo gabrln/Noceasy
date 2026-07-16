@@ -101,7 +101,7 @@ def _collect_backup_paths(user_home: Path) -> list[Path]:
     installer overwrites.
     """
     cache = get_cache()
-    
+
     paths: list[Path] = []
 
     # Config directories from dotfiles.toml

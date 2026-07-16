@@ -5,7 +5,6 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-
 from installer import privesc
 from installer.errors import fatal
 from installer.exec import run

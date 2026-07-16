@@ -65,6 +65,7 @@ def _atomic_pam_write(content: str, ctx: RunContext) -> None:
     finally:
         tmp_path.unlink(missing_ok=True)
 
+
 def _atomic_copy(src: Path, dest: Path, ctx: RunContext) -> None:
     """Copy *src* to *dest* via temp file + ``install`` (root-owned)."""
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -77,7 +78,6 @@ def _atomic_copy(src: Path, dest: Path, ctx: RunContext) -> None:
         )
     finally:
         tmp_path.unlink(missing_ok=True)
-
 
 
 class KeyringModule(Module):

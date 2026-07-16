@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-
-
 from installer import privesc
 from installer.exec import run
 from installer.logger import log

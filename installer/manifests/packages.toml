@@ -1,10 +1,6 @@
 # Pacotes oficiais dos repositórios Arch/CachyOS
 # Agrupados conforme o install.sh original.
 
-
-
-
-
 [[packages]]
 name = "noctalia"
 group = "wm"
@@ -14,9 +10,6 @@ description = "Noctalia V5 shell (CachyOS repo)"
 name = "cmake"
 group = "base"
 description = "Build system"
-
-
-
 
 [[packages]]
 name = "git-delta"
@@ -38,7 +31,6 @@ name = "brightnessctl"
 group = "base"
 description = "Brightness control"
 
-
 [[packages]]
 name = "just"
 group = "base"
@@ -54,17 +46,10 @@ name = "npm"
 group = "base"
 description = "Node package manager"
 
-
-
-
-
-
-
 [[packages]]
 name = "greetd"
 group = "display"
 description = "Display manager"
-
 
 # Polkit precisa de um agent rodando na sessão do usuário para
 # abrir prompts. gnome-shell traz polkit-gnome como dep. Em outras
@@ -220,18 +205,15 @@ name = "engrampa"
 group = "media"
 description = "MATE archive manager (replaces file-roller)"
 
-
 [[packages]]
 name = "obsidian"
 group = "media"
 description = "Knowledge base"
 
-
 [[packages]]
 name = "nwg-look"
 group = "media"
 description = "GTK theme switcher"
-
 
 [[packages]]
 name = "xdg-desktop-portal-gtk"
@@ -242,8 +224,6 @@ description = "GTK desktop portal"
 name = "ttf-jetbrains-mono-nerd"
 group = "themes"
 description = "Nerd font"
-
-
 
 [[packages]]
 name = "wl-clip-persist"
@@ -304,7 +284,6 @@ description = "SSH client/server"
 name = "nano"
 group = "system"
 description = "Simple editor"
-
 
 [[packages]]
 name = "luajit"
