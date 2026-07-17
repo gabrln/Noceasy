@@ -74,7 +74,7 @@ class TestMain:
             main(["--version"])
 
     def test_dry_run_passes_option(self) -> None:
-        with patch("installer.cli.ModuleRunner") as MockRunner, \
+        with patch("installer.cli.ModuleRunner") as mock_runner, \
                 patch("installer.cli.build_default_pipeline"), \
                 patch("installer.cli.detect_real_user",
                       return_value=("test", "/home/test")), \
@@ -83,11 +83,11 @@ class TestMain:
                 patch("installer.cli.install_signal_handlers"), \
                 patch("installer.cli.log"):
             main(["--dry-run"])
-            kwargs = MockRunner.call_args[1]
+            kwargs = mock_runner.call_args[1]
             assert kwargs["options"].dry_run is True
 
     def test_force_passes_option(self) -> None:
-        with patch("installer.cli.ModuleRunner") as MockRunner, \
+        with patch("installer.cli.ModuleRunner") as mock_runner, \
                 patch("installer.cli.build_default_pipeline"), \
                 patch("installer.cli.detect_real_user",
                       return_value=("test", "/home/test")), \
@@ -96,7 +96,7 @@ class TestMain:
                 patch("installer.cli.install_signal_handlers"), \
                 patch("installer.cli.log"):
             main(["--force"])
-            kwargs = MockRunner.call_args[1]
+            kwargs = mock_runner.call_args[1]
             assert kwargs["options"].force is True
 
     def test_verbose_priority_over_quiet(self) -> None:
@@ -135,8 +135,8 @@ class TestMain:
                 patch("installer.cli.set_suppress_stderr"), \
                 patch("installer.cli.install_signal_handlers"), \
                 patch("installer.cli.log"), \
-                patch("installer.cli.ModuleRunner") as MockRunner:
-            MockRunner.return_value.run_all.side_effect = \
+                patch("installer.cli.ModuleRunner") as mock_runner:
+            mock_runner.return_value.run_all.side_effect = \
                 RuntimeError("boom")
             with patch("installer.cli.fatal") as mock_fatal:
                 main([])

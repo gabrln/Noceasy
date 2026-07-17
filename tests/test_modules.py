@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -38,14 +39,14 @@ def ctx() -> RunContext:
 
 
 @pytest.fixture
-def mock_run() -> MagicMock:
+def mock_run() -> Iterator[MagicMock]:
     with patch("installer.infra.exec.run") as m:
         m.return_value = MagicMock(returncode=0, stdout="", stderr="")
         yield m
 
 
 @pytest.fixture
-def mock_priv() -> MagicMock:
+def mock_priv() -> Iterator[MagicMock]:
     with patch("installer.platform.privesc.run_privileged") as m:
         m.return_value = MagicMock(returncode=0, stdout="", stderr="")
         yield m
@@ -129,7 +130,7 @@ class TestYayAurModule:
             cache.return_value.get_list_field.return_value = ["pkg1"]
             mod = YayAurModule(manifest="aur.toml")
             with patch("installer.modules.m04_yay_aur._pacman_missing",
-                       side_effect=[["pkg1"], []]) as pm:
+                       side_effect=[["pkg1"], []]):
                 with patch("installer.modules.m04_yay_aur._install_chunk",
                            return_value=True) as chunk:
                     mod.run(ctx)
@@ -169,8 +170,8 @@ class TestShellModule:
                        mock_priv: MagicMock) -> None:
         with patch("installer.infra.toml_cache.get_cache") as cache:
             cache.return_value.load.return_value = {}
-            with patch("installer.modules.m07_shell.Path") as MockPath:
-                MockPath.return_value.is_file.return_value = True
+            with patch("installer.modules.m07_shell.Path") as mock_path:
+                mock_path.return_value.is_file.return_value = True
                 mod = ShellModule(manifest="zsh-plugins.toml")
                 mod.run(ctx)
         chsh_calls = [c for c in mock_priv.call_args_list
@@ -190,11 +191,11 @@ class TestDotfilesModule:
                                                      "xdg_dirs": {}}
             with patch("installer.modules.m08_dotfiles.REPO_DIR",
                        Path("/repo")):
-                with patch("installer.modules.m08_dotfiles.Path") as MockP:
-                    MockP.return_value.is_dir.return_value = False
+                with patch("installer.modules.m08_dotfiles.Path") as mock_p:
+                    mock_p.return_value.is_dir.return_value = False
                     mock_src = MagicMock()
                     mock_src.exists.return_value = False
-                    MockP.return_value = mock_src
+                    mock_p.return_value = mock_src
                     mod = DotfilesModule(manifest="dotfiles.toml")
                     mod.run(ctx)
 
@@ -237,7 +238,7 @@ class TestGreeterModule:
                                   mock_run: MagicMock,
                                   mock_priv: MagicMock) -> None:
         mock_run.return_value.returncode = 1  # greeter user does not exist
-        with patch("installer.infra.backup.BACKUPS_DIR", tmp_path :=
+        with patch("installer.infra.backup.BACKUPS_DIR",
                    Path("/tmp/bk")):
             mod = GreeterModule()
             mod.run(ctx)
@@ -251,18 +252,18 @@ class TestGreeterModule:
 
 class TestKeyringModule:
     def test_skips_when_pam_missing(self, ctx: RunContext) -> None:
-        with patch("installer.modules.m11_keyring.PAM_FILE") as MockPf:
-            MockPf.is_file.return_value = False
+        with patch("installer.modules.m11_keyring.PAM_FILE") as mock_pf:
+            mock_pf.is_file.return_value = False
             mod = KeyringModule()
             assert mod.pre_check(ctx) is False
 
     def test_adds_auth_lines(self, ctx: RunContext,
                              mock_priv: MagicMock) -> None:
-        with patch("installer.modules.m11_keyring.PAM_FILE") as MockPf:
-            MockPf.is_file.return_value = True
-            MockPf.read_text.return_value = "auth required\nsession required\n"
-            with patch("installer.modules.m11_keyring.Path") as MockPath:
-                MockPath.return_value.with_suffix.return_value = \
+        with patch("installer.modules.m11_keyring.PAM_FILE") as mock_pf:
+            mock_pf.is_file.return_value = True
+            mock_pf.read_text.return_value = "auth required\nsession required\n"
+            with patch("installer.modules.m11_keyring.Path") as mock_path:
+                mock_path.return_value.with_suffix.return_value = \
                     MagicMock(exists=MagicMock(return_value=False))
                 mod = KeyringModule()
                 mod.run(ctx)
@@ -351,18 +352,17 @@ class TestServicesModule:
 
 class TestDevToolsModule:
     def test_skips_when_empty(self, ctx: RunContext) -> None:
-        with patch("installer.modules.m17_dev_tools.DEV_SRC") as MockSrc:
-            MockSrc.is_dir.return_value = False
+        with patch("installer.modules.m17_dev_tools.DEV_SRC") as mock_src:
+            mock_src.is_dir.return_value = False
             mod = DevToolsModule()
             mod.run(ctx)
 
     def test_copies_scripts(self, ctx: RunContext) -> None:
-        with patch("installer.modules.m17_dev_tools.DEV_SRC") as MockSrc, \
-                patch("installer.modules.m17_dev_tools.DEV_DST") as MockDst, \
+        with patch("installer.modules.m17_dev_tools.DEV_SRC") as mock_src, \
                 patch("installer.modules.m17_dev_tools.chown_user"):
-            MockSrc.is_dir.return_value = True
-            MockSrc.glob.return_value = [MagicMock(spec=Path,
-                                                     name="tool.py")]
+            mock_src.is_dir.return_value = True
+            mock_src.glob.return_value = [MagicMock(spec=Path,
+                                                      name="tool.py")]
             mod = DevToolsModule()
             mod.run(ctx)
 
