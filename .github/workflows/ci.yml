@@ -7,13 +7,12 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-test:
+  lint:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
         python-version: ["3.11", "3.12", "3.13"]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +31,23 @@ jobs:
 
       - name: Type-check with mypy
         run: uv run mypy installer/ tests/
+
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        run: |
+          pacman -Syu --noconfirm --needed \
+            python python-pip git
+          pip install uv
+
+      - name: Install Python deps
+        run: uv sync --group dev
 
       - name: Run tests
         run: uv run pytest tests/ -v
