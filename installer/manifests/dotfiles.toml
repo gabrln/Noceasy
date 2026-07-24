@@ -16,6 +16,7 @@ configs = [
   "nvim",
   "qt6ct",
   "pypr",
+  "zellij",
 ]
 
 [special]

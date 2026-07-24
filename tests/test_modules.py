@@ -361,8 +361,10 @@ class TestDevToolsModule:
         with patch("installer.modules.m17_dev_tools.DEV_SRC") as mock_src, \
                 patch("installer.modules.m17_dev_tools.chown_user"):
             mock_src.is_dir.return_value = True
-            mock_src.glob.return_value = [MagicMock(spec=Path,
-                                                      name="tool.py")]
+            mock_file = MagicMock(spec=Path)
+            mock_file.stem = "tool"
+            mock_file.read_text.return_value = "print('hi')"
+            mock_src.glob.return_value = [mock_file]
             mod = DevToolsModule()
             mod.run(ctx)
 
