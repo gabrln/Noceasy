@@ -1,20 +1,15 @@
-"""Backup creation and restore (replaces installer/lib/backup.sh).
+"""Backup creation and retention (replaces installer/lib/backup.sh).
 
 Differences from the bash version:
     - Collision suffix .1/.2/... when basenames collide
     - Different ownership handling: ~/.config/* preserves user
       ownership, /etc/* uses --no-preserve=ownership
     - max_backups retention (read from config.toml)
-    - Atomic restore via staging directory
 """
 
 from __future__ import annotations
 
-import os
-import re
 import shutil
-import subprocess
-import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -49,23 +44,6 @@ def _is_system_path(p: Path) -> bool:
 
 def _timestamp() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S")
-
-
-_COLLISION_SUFFIX_RE = re.compile(r"^(.+)\.(\d+)$")
-
-
-def _strip_collision_suffix(name: str) -> str:
-    """Strip a trailing .N collision suffix from a backup item name.
-
-    Examples:
-        '.zshrc.1' -> '.zshrc'
-        'greetd'   -> 'greetd'
-        '.zshrc'   -> '.zshrc'
-    """
-    m = _COLLISION_SUFFIX_RE.match(name)
-    if m:
-        return m.group(1)
-    return name
 
 
 @dataclass
@@ -160,29 +138,3 @@ def _apply_retention(label: str, max_keep: int) -> None:
 def _dir_size(path: Path) -> int:
     """Total size of a directory in bytes."""
     return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
-
-
-def list_snapshots(label: str | None = None) -> list[str]:
-    """List snapshot names, most recent first. Optionally filtered."""
-    if not BACKUPS_DIR.exists():
-        return []
-    all_snaps = sorted(
-        [p.name for p in BACKUPS_DIR.iterdir() if p.is_dir()],
-        reverse=True,
-    )
-    if label:
-        return [n for n in all_snaps if n.startswith(f"{label}-")]
-    return all_snaps
-
-def _confirm(prompt: str, default_yes: bool = False) -> bool:
-    """Read a y/N confirmation from stdin."""
-    suffix = "[Y/n]" if default_yes else "[y/N]"
-    try:
-        response = input(f"{prompt} {suffix} ").strip().lower()
-    except EOFError:
-        return False
-    if not response:
-        return default_yes
-    return response in ("y", "s", "yes", "sim")
-
-

@@ -9,7 +9,6 @@ from installer.infra.backup import (
     _apply_retention,
     _dir_size,
     _is_system_path,
-    _strip_collision_suffix,
     _unique_name,
     create,
 )
@@ -30,15 +29,6 @@ class TestUniqueName:
         assert _unique_name(tmp_path, "file.txt") == "file.txt.3"
 
 
-class TestStripCollisionSuffix:
-    def test_no_suffix(self) -> None:
-        assert _strip_collision_suffix("file.txt") == "file.txt"
-
-    def test_with_suffix(self) -> None:
-        assert _strip_collision_suffix("file.txt.3") == "file.txt"
-
-    def test_just_number(self) -> None:
-        assert _strip_collision_suffix("foo.42") == "foo"
 
 
 class TestIsSystemPath:
