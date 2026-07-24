@@ -7,3 +7,4 @@ description = "Pyprland: scratchpads, gamemode, and more for Hyprland"
 
 [[packages]]
 name = "bibata-cursor-theme-bin"
+description = "Bibata cursor theme (binario pre-construido do AUR)"
