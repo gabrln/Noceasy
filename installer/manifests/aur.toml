@@ -4,9 +4,6 @@
 [[packages]]
 name = "pyprland"
 description = "Pyprland: scratchpads, gamemode, and more for Hyprland"
-rebuild_on_update = false
 
 [[packages]]
 name = "bibata-cursor-theme-bin"
-description = "Bibata cursor theme (binario pre-construido do AUR)"
-rebuild_on_update = false
