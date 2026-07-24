@@ -26,20 +26,6 @@ class ModuleFailure(InstallerError):  # noqa: N818
         self.module_name = module_name
         self.reason = reason
 
-
-class NetworkError(InstallerError):
-    """Raised when a network operation fails after retries."""
-    pass
-
-
-class PermissionError_(InstallerError):  # noqa: N801, N818
-    """Raised when a privilege-related operation fails.
-
-    Named with underscore to avoid shadowing builtin PermissionError.
-    """
-    pass
-
-
 _cleanup_hooks: list[Callable[[], None]] = []
 
 
@@ -70,14 +56,6 @@ def fatal(message: str, code: int = 1) -> None:
     sys.exit(code)
 
 
-# Exit codes that are NOT considered fatal (e.g. `command -v` returns
-# 1 when a binary is missing; that's expected and shouldn't trigger
-# cleanup of state).
-_BENIGN_EXIT_CODES = {1, 2, 3, 64, 130, 141}
-
-
-def is_benign_exit(code: int) -> bool:
-    return code in _BENIGN_EXIT_CODES
 
 
 def _on_signal(signum, frame):

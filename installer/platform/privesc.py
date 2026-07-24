@@ -340,31 +340,6 @@ def run_privileged(
     return proc
 
 
-# ---------------------------------------------------------------------------
-# Cache management (test / debug)
-# ---------------------------------------------------------------------------
-
-def clear_cache(tool: Tool) -> None:
-    """Invalidate the cached credentials for *tool*.
-
-    Runs ``tool -k`` (sudo) or the equivalent.  Intended for test
-    harnesses and debugging — not for production use.
-    """
-    if tool is Tool.sudo:
-        argv = ["sudo", "-k"]
-    elif tool is Tool.doas:
-        # doas has no standard cache-clear flag; best-effort: try -k
-        argv = ["doas", "-k"]
-    else:
-        # run0: no cache-clear mechanism; warn and return.
-        log("warn", "privesc: run0 has no cache-clear mechanism")
-        return
-
-    log("debug", f"privesc: clearing cache — {' '.join(argv)}")
-    subprocess.run(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-# ---------------------------------------------------------------------------
 # Module-level convenience
 # ---------------------------------------------------------------------------
 

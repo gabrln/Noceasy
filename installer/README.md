@@ -47,7 +47,7 @@ user never needs to invoke the installer with `sudo`.
 | `state.py` | `installer/core/state.py` | state.json (flock + os.replace atomic) |
 | `exec.py` | `installer/infra/exec.py` | run(), run_capture(), run_or_die() |
 | `toml_cache.py` | `installer/infra/toml_cache.py` | in-memory manifest cache |
-| `backup.py` | `installer/infra/backup.py` | snapshot, restore, retention |
+| `backup.py` | `installer/infra/backup.py` | snapshot, retention |
 | `privesc.py` | `installer/platform/privesc.py` | Tool enum, detect(), check_cached(), validate_password(), run_privileged() |
 | `user.py` | `installer/platform/user.py` | detect_real_user() — resolves uid → (user, home) |
 | `logger.py` | `installer/ui/logger.py` | Rich logging with NO_COLOR/TTY/levels |

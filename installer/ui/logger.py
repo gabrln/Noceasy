@@ -172,7 +172,3 @@ def log(level: str, message: str) -> None:
                               highlight=False)
 
 
-def get_log_file() -> Path | None:
-    if _state is None:
-        return None
-    return _state.log_file

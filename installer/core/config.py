@@ -30,7 +30,6 @@ def _find_repo_root() -> Path:
 REPO_DIR: Path = _find_repo_root()
 INSTALLER_DIR: Path = REPO_DIR / "installer"
 MANIFESTS_DIR: Path = INSTALLER_DIR / "manifests"
-MODULES_DIR: Path = INSTALLER_DIR / "modules"
 CONFIG_FILE: Path = INSTALLER_DIR / "config.toml"
 
 
@@ -79,7 +78,6 @@ STATE_FILE: Path = STATE_DIR / "state.json"
 # Tunable limits (overridable via config.toml)
 DEFAULT_MIN_FREE_BYTES: int = 5 * 1024**3  # 5 GiB
 YAY_CHUNK_SIZE: int = 50
-MAX_BACKUP_RETENTION: int = 3
 LOCK_TIMEOUT_SECONDS: int = 5
 DEFAULT_MAX_BACKUP_BYTES: int = 500 * 1024 * 1024  # 500 MiB
 

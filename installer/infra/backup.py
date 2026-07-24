@@ -174,65 +174,6 @@ def list_snapshots(label: str | None = None) -> list[str]:
         return [n for n in all_snaps if n.startswith(f"{label}-")]
     return all_snaps
 
-
-def restore(label: str) -> bool:
-    """Restore the most recent snapshot with the given label."""
-    snaps = list_snapshots(label=label)
-    if not snaps:
-        log("error", f"No backup found with label '{label}'.")
-        return False
-
-    latest = snaps[0]
-    src = BACKUPS_DIR / latest
-    log("warn", f"This will overwrite current files with backup '{latest}'.")
-
-    if not _confirm("Continue with rollback?"):
-        log("info", "Rollback cancelled.")
-        return True
-
-    log("info", f"Restoring backup '{latest}'...")
-    for item in src.iterdir():
-        target = _resolve_target(item.name)
-        if target is None:
-            log("warn", f"  -> unknown destination for {item.name}, skipping.")
-            continue
-
-        # Atomic restore: copy to staging, then rm + mv
-        staging = Path(tempfile.mkdtemp(prefix="noceasy-restore-"))
-        try:
-            shutil.copytree(item, staging / target.name)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            if target.exists() or target.is_symlink():
-                if target.is_symlink() or target.is_file():
-                    target.unlink()
-                else:
-                    shutil.rmtree(target)
-            (staging / target.name).rename(target)
-        except OSError as exc:
-            log("warn", f"  -> failed to restore {item.name}: {exc}")
-            continue
-        finally:
-            shutil.rmtree(staging, ignore_errors=True)
-
-        # Restore ownership for user paths
-        if not _is_system_path(target):
-            try:
-                uid = int(os.environ.get("SUDO_UID", "0"))
-                gid = int(os.environ.get("SUDO_GID", "0"))
-                if uid and gid:
-                    subprocess.run(
-                        ["chown", "-R", f"{uid}:{gid}", str(target)],
-                        check=False, capture_output=True,
-                    )
-            except (ValueError, OSError):
-                pass
-
-        log("info", f"  -> {target}")
-
-    log("success", f"Backup '{latest}' restored.")
-    return True
-
-
 def _confirm(prompt: str, default_yes: bool = False) -> bool:
     """Read a y/N confirmation from stdin."""
     suffix = "[Y/n]" if default_yes else "[y/N]"
@@ -245,15 +186,3 @@ def _confirm(prompt: str, default_yes: bool = False) -> bool:
     return response in ("y", "s", "yes", "sim")
 
 
-def _resolve_target(name: str) -> Path | None:
-    """Map a backup item basename to its original target path."""
-    user_home = Path(os.environ.get("USER_HOME", "/root"))
-    stripped = _strip_collision_suffix(name)
-
-    if stripped == ".config":
-        return user_home / ".config"
-    if stripped == "greetd":
-        return Path("/etc/greetd")
-    if stripped == "pam_greetd":
-        return Path("/etc/pam.d/greetd")
-    return user_home / stripped

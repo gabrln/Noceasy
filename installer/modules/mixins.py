@@ -70,12 +70,6 @@ def chown_user(path: Path, user: str, sudo_password: str | None = None) -> None:
         sudo_password,
     )
 
-
-def chown_user_path(path: Path, user: str, sudo_password: str | None = None) -> None:
-    """Alias for chown_user (used in some modules for clarity)."""
-    chown_user(path, user, sudo_password)
-
-
 def retry_with_backoff(callable_fn, *args,
                         attempts: int = NETWORK_RETRY_ATTEMPTS,
                         base_seconds: int = NETWORK_RETRY_BASE_SECONDS,
