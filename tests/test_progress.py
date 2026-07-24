@@ -17,11 +17,6 @@ class TestProgressState:
         assert s.step == ""
         assert s.task_total == 1
 
-    def test_custom_total(self) -> None:
-        s = ProgressState(total_modules=3)
-        assert s.pct == 0.0
-        s.module_idx = 2
-        assert s.pct == 2 / 3
 
 
 class TestOutputCapture:

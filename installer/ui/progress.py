@@ -94,9 +94,6 @@ class ProgressState:
     lines: list[str] = field(default_factory=list)
     error: str = ""
 
-    @property
-    def pct(self) -> float:
-        return self.module_idx / self.total_modules if self.total_modules else 0
 
 
 # ── MarkerParser ─────────────────────────────────────────────────────
@@ -120,7 +117,7 @@ def parse_marker(line: str, state: ProgressState) -> bool:
     if not line.startswith("@"):
         return False
 
-    for tag, field_name in _TAGS.items():
+    for tag in _TAGS:
         prefix = f"@{tag}:"
         if not line.startswith(prefix):
             continue
@@ -366,13 +363,11 @@ class LiveDisplay:
         from rich.console import Console
         from rich.live import Live
         from rich.progress import Progress, TaskID
-        self._total = total
         self._state = ProgressState(total_modules=total)
         self._live: Live | None = None
         self._console: Console | None = None
         self._progress: Progress | None = None
         self._task_id: TaskID | None = None
-        self._final: list[str] = []
         self._panel_width = PANEL_WIDTH
         self._panel_height = PANEL_HEIGHT  # fixed box size, never grows
         self._term_rows: int | None = None  # terminal height, for centering only
