@@ -23,12 +23,6 @@ animation = "fromTop"
 size = "75% 60%"
 lazy = true
 
-[scratchpads.keyhints]
-command = "kitty --class keyhints-scratch -e /home/gabrln/.config/hypr/scripts/KeyHints_runner.lua"
-class = "keyhints-scratch"
-animation = "fromTop"
-size = "50% 50%"
-lazy = true
 
 [scratchpads.spotify]
 command = "spotify-launcher"

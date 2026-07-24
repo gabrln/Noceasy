@@ -124,29 +124,7 @@ target is made executable). The dev scripts are versioned in the
 repo but installed system-wide, so they appear on `$PATH` for the
 real user and survive `git pull` (next `install.sh` re-syncs).
 
-Currently shipped:
-
-- `gen_keyhints` — regenera `KeyHints_data.lua` a partir de `keybinds.lua`.
-  Categorias vêm dos cabeçalhos de seção `═══`; descrições das anotações
-  `-- @desc` (ou auto-geradas). Uso:
-  ```bash
-  gen_keyhints                   # usa ~/Projects/Noceasy
-  gen_keyhints --repo ~/dotfiles # caminho customizado do repo
-  NOCEASY_REPO=~/dotfiles gen_keyhints --check  # CI / pre-commit
-  ```
-
-To add another dev tool, drop a `*.py` file with a `#!/usr/bin/env python3`
-shebang into `installer/dev/`; it will be picked up on the next
-`install.sh` run. The module is a no-op when the directory is empty.
-
-The dev tests (`installer/dev/test_*.py`) require the system `lua` binary
-on `$PATH` and are **not** included in the default `pytest tests/` CI job.
-To run them locally:
-
-```bash
-uv run pytest installer/dev/ -v
-```
-
+If `installer/dev/` is empty, the module is a no-op.
 ## Validation
 
 ```bash
