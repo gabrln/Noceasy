@@ -8,7 +8,7 @@ from pathlib import Path
 
 from installer.core.config import REPO_DIR
 from installer.infra import backup
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.modules.base import Module, RunContext
 from installer.platform import privesc
 from installer.ui.logger import log
@@ -16,7 +16,7 @@ from installer.ui.logger import log
 
 def _create_greeter_user(ctx: RunContext) -> None:
     """Create the 'greeter' system user if it doesn't exist yet."""
-    if run(["id", "-u", "greeter"]).returncode == 0:
+    if exec_mod.run(["id", "-u", "greeter"]).returncode == 0:
         return
 
     log("info", "Creating greeter user...")

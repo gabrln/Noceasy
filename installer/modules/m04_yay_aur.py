@@ -12,7 +12,7 @@ from pathlib import Path
 
 from installer.core.config import YAY_CHUNK_SIZE
 from installer.core.errors import fatal
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.infra.toml_cache import get_cache
 from installer.modules.base import Module, RunContext
 from installer.ui.logger import log
@@ -32,7 +32,7 @@ _NINJA_STEP_RE = re.compile(r"^\[(\d+)/(\d+)\]")        # "[123/456] Building CX
 _STEP_UPDATE_INTERVAL = 0.1  # seconds
 
 def _pacman_missing(pkgs: list[str]) -> list[str]:
-    proc = run(["pacman", "-T", *pkgs], timeout=30)
+    proc = exec_mod.run(["pacman", "-T", *pkgs], timeout=30)
     # pacman -T (--deptest): 0 = all satisfied, 127 = some packages
     # missing (official behavior since the code was changed from 1
     # to 127 to avoid colliding with other pacman errors).

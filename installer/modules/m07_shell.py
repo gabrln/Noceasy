@@ -9,7 +9,7 @@ from installer.core.config import (
     NETWORK_RETRY_BASE_SECONDS,
 )
 from installer.core.errors import fatal
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.infra.toml_cache import get_cache
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import chown_user, retry_with_backoff
@@ -18,7 +18,7 @@ from installer.ui.logger import log
 
 
 def _getent_shell(user: str) -> str:
-    out = run(["getent", "passwd", user])
+    out = exec_mod.run(["getent", "passwd", user])
     if out.returncode == 0 and out.stdout:
         parts = str(out.stdout).strip().split(":")
         if len(parts) >= 7:
@@ -28,21 +28,21 @@ def _getent_shell(user: str) -> str:
 
 def _set_user_shell_env(user: str) -> None:
     """Update SHELL in the systemd user manager if the user is logged in."""
-    out = run(["id", "-u", user])
+    out = exec_mod.run(["id", "-u", user])
     if out.returncode != 0:
         return
     uid = out.stdout.strip()
     runtime_dir = f"/run/user/{uid}"
     if not Path(runtime_dir).is_dir():
         return
-    run(
+    exec_mod.run(
         ["systemctl", "--user", "set-environment", "SHELL=/usr/bin/zsh"],
         env={"XDG_RUNTIME_DIR": runtime_dir},
     )
 
 
 def _clone_plugin(repo: str, dest: Path) -> bool:
-    proc = run(
+    proc = exec_mod.run(
         ["git", "clone", "--depth=1", f"https://github.com/{repo}.git",
          str(dest)],
     )
@@ -89,7 +89,7 @@ class ShellModule(Module):
 
             log("info", f"Installing plugin: {name}...")
             if plugin_path.exists():
-                run(["rm", "-rf", str(plugin_path)])
+                exec_mod.run(["rm", "-rf", str(plugin_path)])
 
             ok = retry_with_backoff(
                 _clone_plugin, repo, plugin_path,

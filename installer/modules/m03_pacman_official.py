@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 from installer.core.errors import fatal
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.infra.toml_cache import get_cache
 from installer.modules.base import Module, RunContext
 from installer.platform import privesc
@@ -17,7 +17,7 @@ _CRITICAL_PACKAGES = {"zsh", "base", "base-devel", "git"}
 
 def _cachyos_present() -> bool:
     """True if the system is CachyOS (kernel installed or repo enabled)."""
-    out = run(["pacman", "-Qq"], timeout=10)
+    out = exec_mod.run(["pacman", "-Qq"], timeout=10)
     if out.returncode == 0 and any(
             p.startswith("linux-cachyos") for p in out.stdout.split()):
         return True
@@ -28,7 +28,7 @@ def _cachyos_present() -> bool:
 
 
 def _pacman_missing(pkgs: list[str]) -> list[str]:
-    out = run(["pacman", "-T", *pkgs])
+    out = exec_mod.run(["pacman", "-T", *pkgs])
     return out.stdout.strip().split() if out.stdout else []
 
 

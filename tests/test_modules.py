@@ -29,10 +29,12 @@ from installer.modules.preflight import PreflightModule
 
 
 @pytest.fixture
-def ctx() -> RunContext:
+def ctx(tmp_path: Path) -> RunContext:
+    home = tmp_path / "home" / "test"
+    home.mkdir(parents=True, exist_ok=True)
     return RunContext(
         real_user="test",
-        user_home=Path("/home/test"),
+        user_home=home,
         state=MagicMock(spec=State),
         sudo_password="pw",
     )
@@ -148,7 +150,7 @@ class TestFlatpakModule:
             mod = FlatpakModule(manifest="flatpak.toml")
             mod.run(ctx)
 
-    def configures_remote(self, ctx: RunContext,
+    def test_configures_remote(self, ctx: RunContext,
                           mock_run: MagicMock) -> None:
         with patch("installer.modules.m05_flatpak.is_command",
                    return_value=True), \
@@ -217,7 +219,7 @@ class TestHyprlandEnvModule:
         (cfg / "hypr").mkdir(parents=True, exist_ok=True)
         (cfg / "hypr" / "hyprland.lua").touch()
         mod = HyprlandEnvModule()
-        with patch("installer.modules.m09_hyprland_env.run") as mock_run:
+        with patch("installer.infra.exec.run") as mock_run:
             mod.run(ctx)
         find_calls = [c for c in mock_run.call_args_list
                       if "find" in str(c[0][0])]
@@ -295,7 +297,7 @@ class TestWallpapersModule:
 class TestIconsCursorsFontsModule:
     def test_runs_fc_cache(self, ctx: RunContext) -> None:
         mod = IconsCursorsFontsModule()
-        with patch("installer.modules.m14_icons_cursors_fonts.run") as mock_run, \
+        with patch("installer.infra.exec.run") as mock_run, \
                 patch("installer.modules.m14_icons_cursors_fonts.chown_user"):
             mod.run(ctx)
         fc_calls = [c for c in mock_run.call_args_list

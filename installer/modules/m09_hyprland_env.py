@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from installer.core.errors import fatal
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.modules.base import Module, RunContext
 from installer.ui.logger import log
 
@@ -16,7 +16,7 @@ class HyprlandEnvModule(Module):
         cfg_root = ctx.user_home / ".config"
         if cfg_root.is_dir():
             # Only chmod scripts under */scripts/* (not random .sh files).
-            run(["find", str(cfg_root), "-path", "*/scripts/*", "-type", "f",
+            exec_mod.run(["find", str(cfg_root), "-path", "*/scripts/*", "-type", "f",
                  "-exec", "chmod", "+x", "{}", "+"])
 
         log("info", "Validating Hyprland configuration...")

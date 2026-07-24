@@ -10,7 +10,7 @@ from pathlib import Path
 
 from installer.core.config import REPO_DIR
 from installer.core.errors import fatal
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.infra.toml_cache import get_cache
 from installer.modules.base import Module, RunContext
 from installer.ui.logger import log
@@ -24,7 +24,7 @@ def _atomic_copytree(src: Path, dst: Path) -> bool:
     """
     staging = Path(tempfile.mkdtemp(prefix="noceasy-dot-"))
     try:
-        proc = run(
+        proc = exec_mod.run(
             ["cp", "-a", str(src), str(staging / dst.name)],
         )
         if proc.returncode != 0:
@@ -112,7 +112,7 @@ def _copy_avulso(src_rel: str, dst_template: str, ctx: RunContext) -> None:
         bak = dst_path.with_suffix(dst_path.suffix + f".noceasy.bak.{int(time.time())}")
         shutil.copy2(dst_path, bak)
 
-    run(["cp", "-f", str(src_path), str(dst_path)])
+    exec_mod.run(["cp", "-f", str(src_path), str(dst_path)])
     log("info", f"  -> {dst_template}")
 
 
@@ -166,7 +166,7 @@ class DotfilesModule(Module):
 
         # XDG directories
         log("info", "Creating additional XDG directories...")
-        run(["xdg-user-dirs-update"])
+        exec_mod.run(["xdg-user-dirs-update"])
         xdg = get_cache().load("dotfiles.toml").get("xdg_dirs", {}).get("extra", [])
         for d in xdg:
             _create_xdg_dir(d, ctx)
@@ -174,6 +174,6 @@ class DotfilesModule(Module):
         # If Hyprland is running, its inotify watcher may have tried
         # to reload while files were being written and entered an error
         # state. Force a clean reload now that everything is in place.
-        run(["hyprctl", "reload"])
+        exec_mod.run(["hyprctl", "reload"])
 
         log("success", "Dotfiles applied.")

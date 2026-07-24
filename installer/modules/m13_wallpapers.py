@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 from installer.core.config import get_config
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.infra.toml_cache import get_cache
 from installer.modules.base import Module, RunContext
 from installer.ui.logger import log
@@ -39,14 +39,14 @@ def _expand_path(template: str, user_home: Path) -> Path:
 
 
 def _curl_download(url: str, out: Path, timeout: int = 120) -> bool:
-    return run(["curl", "-fsSL", "--retry", "3", "--retry-delay", "2",
+    return exec_mod.run(["curl", "-fsSL", "--retry", "3", "--retry-delay", "2",
                 "-o", str(out), url], timeout=timeout).returncode == 0
 
 
 def _aria2_download(url: str, out: Path, timeout: int = 300) -> bool:
     if shutil.which("aria2c") is None:
         return _curl_download(url, out, timeout=timeout)
-    return run(["aria2c", "--quiet=true", "--console-log-level=warn",
+    return exec_mod.run(["aria2c", "--quiet=true", "--console-log-level=warn",
                 "-o", out.name, "-d", str(out.parent), url],
                 timeout=timeout).returncode == 0
 
@@ -85,13 +85,13 @@ def _verify_sha256(path: Path, expected: str) -> bool:
 
 
 def _detect_mime(path: Path) -> str:
-    out = run(["file", "-b", "--mime-type", str(path)], timeout=5)
+    out = exec_mod.run(["file", "-b", "--mime-type", str(path)], timeout=5)
     return out.stdout.strip() if out.stdout else ""
 
 
 def _fetch_drive_html(file_id: str) -> str:
     """GET the Drive download page to extract UUID/confirm tokens."""
-    out = run(["curl", "-fsSL", "--max-time", "30",
+    out = exec_mod.run(["curl", "-fsSL", "--max-time", "30",
                f"https://drive.google.com/uc?export=download&id={file_id}"],
                timeout=45)
     return out.stdout if out.returncode == 0 else ""
@@ -121,7 +121,7 @@ class WallpapersModule(Module):
 
         log("info", f"Ensuring wallpapers directory: {wp_dir}")
         wp_dir.mkdir(parents=True, exist_ok=True)
-        run(["chown", f"{ctx.real_user}:{ctx.real_user}", str(wp_dir)])
+        exec_mod.run(["chown", f"{ctx.real_user}:{ctx.real_user}", str(wp_dir)])
 
         if any(wp_dir.iterdir()):
             log("success",
@@ -159,7 +159,7 @@ class WallpapersModule(Module):
                 return
 
             log("info", f"Extracting {size // (1024 * 1024)} MB to {wp_dir}...")
-            result = run(["unzip", "-o", "-j", str(wp_tmp), "-d", str(wp_dir)])
+            result = exec_mod.run(["unzip", "-o", "-j", str(wp_tmp), "-d", str(wp_dir)])
             if result.returncode == 0:
                 log("success", f"Wallpapers extracted to {wp_dir}.")
             else:

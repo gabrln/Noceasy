@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from installer.infra.exec import run
+from installer.infra import exec as exec_mod
 from installer.modules.base import Module, RunContext
 from installer.modules.mixins import chown_user, is_command
 from installer.ui.logger import log
@@ -13,7 +13,7 @@ class IconsCursorsFontsModule(Module):
 
     def run(self, ctx: RunContext) -> None:
         log("info", "Updating font cache...")
-        run(["fc-cache", "-fv"], timeout=120)
+        exec_mod.run(["fc-cache", "-fv"], timeout=120)
 
         log("info", "Ensuring user icons directory...")
         icons_dir = ctx.user_home / ".local" / "share" / "icons"
@@ -24,7 +24,7 @@ class IconsCursorsFontsModule(Module):
             log("info", "Updating gtk icon cache...")
             for d in icons_dir.iterdir():
                 if d.is_dir():
-                    result = run(["gtk-update-icon-cache", "-f", "-t", str(d)])
+                    result = exec_mod.run(["gtk-update-icon-cache", "-f", "-t", str(d)])
                     if result.returncode != 0:
                         log("warn", f"gtk-update-icon-cache failed for {d}: "
                                     f"{result.stderr.strip()}")

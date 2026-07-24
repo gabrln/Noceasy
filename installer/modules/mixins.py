@@ -13,8 +13,8 @@ from installer.core.config import (
     NETWORK_RETRY_ATTEMPTS,
     NETWORK_RETRY_BASE_SECONDS,
 )
+from installer.infra import exec as exec_mod
 from installer.infra.backup import create as backup_create
-from installer.infra.exec import run
 from installer.infra.toml_cache import get_cache
 from installer.platform import privesc
 from installer.ui.logger import log
@@ -27,7 +27,7 @@ def is_command(name: str) -> bool:
 
 def has_internet() -> bool:
     """True if github.com is reachable."""
-    return run(["curl", "-fsSI", "--max-time", "5", "https://github.com"],
+    return exec_mod.run(["curl", "-fsSI", "--max-time", "5", "https://github.com"],
                 timeout=10).returncode == 0
 
 
@@ -53,12 +53,12 @@ def has_free_space(paths: Sequence[Path],
 
 def pkg_installed(pkg: str) -> bool:
     """True if `pkg` is installed via pacman."""
-    return run(["pacman", "-Q", pkg]).returncode == 0
+    return exec_mod.run(["pacman", "-Q", pkg]).returncode == 0
 
 
 def systemd_unit_exists(unit: str) -> bool:
     """True if the systemd unit file is known."""
-    return run(["systemctl", "list-unit-files", unit]).returncode == 0
+    return exec_mod.run(["systemctl", "list-unit-files", unit]).returncode == 0
 
 
 def chown_user(path: Path, user: str, sudo_password: str | None = None) -> None:
