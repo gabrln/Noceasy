@@ -1,9 +1,5 @@
 # Pacotes AUR instalados via yay
 
-[[packages]]
-name = "noctalia-greeter-git"
-description = "Noctalia V5 greeter"
-rebuild_on_update = true
 
 [[packages]]
 name = "pyprland"

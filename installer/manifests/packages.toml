@@ -61,6 +61,11 @@ group = "zsh"
 description = "Shell history sync"
 
 [[packages]]
+name = "noctalia-greeter"
+group = "display"
+description = "Noctalia V5 greeter (official repo)"
+
+[[packages]]
 name = "bat"
 group = "zsh"
 description = "Cat clone with syntax highlight"
